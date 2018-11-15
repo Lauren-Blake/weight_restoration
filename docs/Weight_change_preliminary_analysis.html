@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Lauren Blake" />
+
+<meta name="date" content="2018-09-17" />
+
+<title>Weight_change_preliminary_analysis</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-5.0.13/css/fa-svg-with-js.css" rel="stylesheet" />
+<script src="site_libs/font-awesome-5.0.13/js/fontawesome-all.min.js"></script>
+<script src="site_libs/font-awesome-5.0.13/js/fa-v4-shims.min.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">weight_restoration</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/jdblischak/workflowr">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Weight_change_preliminary_analysis</h1>
+<h4 class="author"><em>Lauren Blake</em></h4>
+<h4 class="date"><em>2018-09-17</em></h4>
+
+</div>
+
+
+<p><strong>Last updated:</strong> 2018-11-15</p>
+<strong>workflowr checks:</strong> <small>(Click a bullet for more information)</small>
+<ul>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>R Markdown file:</strong> up-to-date </summary></p>
+<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Environment:</strong> empty </summary></p>
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Seed:</strong> <code>set.seed(12345)</code> </summary></p>
+<p>The command <code>set.seed(12345)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Session information:</strong> recorded </summary></p>
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> <a href="https://github.com/Lauren-Blake/weight_restoration/tree/7bcd123a2c06ce5630564f26162764349a079e01" target="_blank">7bcd123</a> </summary></p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    analysis/.DS_Store
+    Ignored:    analysis/VennDiagram2018-07-24_06-55-46.log
+    Ignored:    analysis/VennDiagram2018-07-24_06-56-13.log
+    Ignored:    analysis/VennDiagram2018-07-24_06-56-50.log
+    Ignored:    analysis/VennDiagram2018-07-24_06-58-41.log
+    Ignored:    analysis/VennDiagram2018-07-24_07-00-07.log
+    Ignored:    analysis/VennDiagram2018-07-24_07-00-42.log
+    Ignored:    analysis/VennDiagram2018-07-24_07-01-08.log
+    Ignored:    analysis/VennDiagram2018-08-17_15-13-24.log
+    Ignored:    analysis/VennDiagram2018-08-17_15-13-30.log
+    Ignored:    analysis/VennDiagram2018-08-17_15-15-06.log
+    Ignored:    analysis/VennDiagram2018-08-17_15-16-01.log
+    Ignored:    analysis/VennDiagram2018-08-17_15-17-51.log
+    Ignored:    analysis/VennDiagram2018-08-17_15-18-42.log
+    Ignored:    analysis/VennDiagram2018-08-17_15-19-21.log
+    Ignored:    analysis/VennDiagram2018-08-20_09-07-57.log
+    Ignored:    analysis/VennDiagram2018-08-20_09-08-37.log
+    Ignored:    analysis/VennDiagram2018-08-26_19-54-03.log
+    Ignored:    analysis/VennDiagram2018-08-26_20-47-08.log
+    Ignored:    analysis/VennDiagram2018-08-26_20-49-49.log
+    Ignored:    analysis/VennDiagram2018-08-27_00-04-36.log
+    Ignored:    analysis/VennDiagram2018-08-27_00-09-27.log
+    Ignored:    analysis/VennDiagram2018-08-27_00-13-57.log
+    Ignored:    analysis/VennDiagram2018-08-27_00-16-32.log
+    Ignored:    analysis/VennDiagram2018-08-27_10-00-25.log
+    Ignored:    analysis/VennDiagram2018-08-28_06-03-13.log
+    Ignored:    analysis/VennDiagram2018-08-28_06-03-14.log
+    Ignored:    analysis/VennDiagram2018-08-28_06-05-50.log
+    Ignored:    analysis/VennDiagram2018-08-28_06-06-58.log
+    Ignored:    analysis/VennDiagram2018-08-28_06-10-12.log
+    Ignored:    analysis/VennDiagram2018-08-28_06-10-13.log
+    Ignored:    analysis/VennDiagram2018-08-28_06-18-29.log
+    Ignored:    analysis/VennDiagram2018-08-28_07-22-26.log
+    Ignored:    analysis/VennDiagram2018-08-28_07-22-27.log
+    Ignored:    analysis/VennDiagram2018-08-28_13-05-27.log
+    Ignored:    analysis/VennDiagram2018-09-12_01-45-59.log
+    Ignored:    analysis/VennDiagram2018-09-12_01-49-31.log
+    Ignored:    analysis/VennDiagram2018-09-12_01-58-11.log
+    Ignored:    analysis/VennDiagram2018-09-12_01-59-46.log
+    Ignored:    analysis/VennDiagram2018-09-12_02-08-07.log
+    Ignored:    analysis/VennDiagram2018-09-12_02-08-56.log
+    Ignored:    analysis/VennDiagram2018-11-15_14-20-08.log
+    Ignored:    analysis/VennDiagram2018-11-15_14-20-15.log
+    Ignored:    analysis/VennDiagram2018-11-15_14-20-23.log
+    Ignored:    analysis/VennDiagram2018-11-15_14-21-14.log
+    Ignored:    analysis/VennDiagram2018-11-15_14-21-57.log
+    Ignored:    analysis/VennDiagram2018-11-15_14-33-34.log
+    Ignored:    analysis/VennDiagram2018-11-15_14-36-19.log
+    Ignored:    analysis/VennDiagram2018-11-15_14-48-41.log
+    Ignored:    analysis/VennDiagram2018-11-15_14-48-42.log
+    Ignored:    analysis/VennDiagram2018-11-15_15-03-35.log
+    Ignored:    analysis/VennDiagram2018-11-15_15-03-55.log
+    Ignored:    analysis/VennDiagram2018-11-15_15-07-05.log
+    Ignored:    analysis/VennDiagram2018-11-15_15-07-25.log
+    Ignored:    analysis/VennDiagram2018-11-15_15-09-29.log
+    Ignored:    analysis/VennDiagram2018-11-15_15-09-48.log
+    Ignored:    analysis/VennDiagram2018-11-15_15-14-30.log
+    Ignored:    analysis/VennDiagram2018-11-15_15-15-25.log
+    Ignored:    analysis/VennDiagram2018-11-15_15-16-04.log
+    Ignored:    data/DAVID_2covar/
+    Ignored:    data/DAVID_results/
+    Ignored:    data/Eigengenes/
+    Ignored:    data/aux_info/
+    Ignored:    data/hg_38/
+    Ignored:    data/libParams/
+    Ignored:    data/logs/
+    Ignored:    docs/VennDiagram2018-07-24_06-55-46.log
+    Ignored:    docs/VennDiagram2018-07-24_06-56-13.log
+    Ignored:    docs/VennDiagram2018-07-24_06-56-50.log
+    Ignored:    docs/VennDiagram2018-07-24_06-58-41.log
+    Ignored:    docs/VennDiagram2018-07-24_07-00-07.log
+    Ignored:    docs/VennDiagram2018-07-24_07-00-42.log
+    Ignored:    docs/VennDiagram2018-07-24_07-01-08.log
+    Ignored:    docs/figure/.DS_Store
+    Ignored:    output/.DS_Store
+
+Untracked files:
+    Untracked:  docs/figure/time_two_covar.Rmd/
+
+Unstaged changes:
+    Modified:   analysis/time_two_covar.Rmd
+
+</code></pre>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes. </details>
+</li>
+</ul>
+<details> <summary> <small><strong>Expand here to see past versions:</strong></small> </summary>
+<ul>
+<table style="border-collapse:separate; border-spacing:5px;">
+<thead>
+<tr>
+<th style="text-align:left;">
+File
+</th>
+<th style="text-align:left;">
+Version
+</th>
+<th style="text-align:left;">
+Author
+</th>
+<th style="text-align:left;">
+Date
+</th>
+<th style="text-align:left;">
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Rmd
+</td>
+<td style="text-align:left;">
+<a href="https://github.com/Lauren-Blake/weight_restoration/blob/7bcd123a2c06ce5630564f26162764349a079e01/analysis/Weight_change_preliminary_analysis.Rmd" target="_blank">7bcd123</a>
+</td>
+<td style="text-align:left;">
+Lauren Blake
+</td>
+<td style="text-align:left;">
+2018-11-15
+</td>
+<td style="text-align:left;">
+Nov 15 weight info
+</td>
+</tr>
+</tbody>
+</table>
+</ul>
+<p></details></p>
+<hr />
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>The goal of this script is to identify the individuals that weight relapsed and the amount of change they underwent.</p>
+<div id="get-weight-change-data" class="section level2">
+<h2>Get weight change data</h2>
+<pre class="r"><code># Load libraries
+
+library(ggplot2)</code></pre>
+<pre><code>Warning: package &#39;ggplot2&#39; was built under R version 3.4.4</code></pre>
+<pre class="r"><code>library(cowplot)</code></pre>
+<pre><code>Warning: package &#39;cowplot&#39; was built under R version 3.4.4</code></pre>
+<pre><code>
+Attaching package: &#39;cowplot&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:ggplot2&#39;:
+
+    ggsave</code></pre>
+<pre class="r"><code># Get weight change data
+weight_change &lt;- read.csv(&quot;../data/weight_change.csv&quot;)</code></pre>
+</div>
+<div id="summary-of-weight-change-data" class="section level2">
+<h2>Summary of weight change data</h2>
+<pre class="r"><code># Subset to time point 3
+
+weight_change_t3 &lt;- weight_change[weight_change$time == 3,]
+
+summary(weight_change_t3)</code></pre>
+<pre><code>     BAN_ID          time       Weight      Weight_change    
+ Min.   :2201   Min.   :3   Min.   : 71.5   Min.   :-14.500  
+ 1st Qu.:2218   1st Qu.:3   1st Qu.:102.8   1st Qu.:  0.900  
+ Median :2239   Median :3   Median :108.0   Median :  7.100  
+ Mean   :2237   Mean   :3   Mean   :110.0   Mean   :  7.601  
+ 3rd Qu.:2256   3rd Qu.:3   3rd Qu.:118.4   3rd Qu.: 10.800  
+ Max.   :2274   Max.   :3   Max.   :148.9   Max.   : 45.200  
+                            NA&#39;s   :14      NA&#39;s   :14       
+   Relapse_t3       Relapse_t4   Relapse_t5 
+ Min.   :0.0000   Min.   :0    Min.   :0.0  
+ 1st Qu.:0.0000   1st Qu.:0    1st Qu.:0.0  
+ Median :0.0000   Median :0    Median :0.5  
+ Mean   :0.1951   Mean   :0    Mean   :0.5  
+ 3rd Qu.:0.0000   3rd Qu.:0    3rd Qu.:1.0  
+ Max.   :1.0000   Max.   :0    Max.   :1.0  
+ NA&#39;s   :14       NA&#39;s   :49   NA&#39;s   :49   </code></pre>
+<pre class="r"><code># How many are negative and how many are neutral/positive weight gain?
+
+summary(weight_change_t3$Weight_change &lt;0)</code></pre>
+<pre><code>   Mode   FALSE    TRUE    NA&#39;s 
+logical      33       8      14 </code></pre>
+<pre class="r"><code>weight_change_t3[,5] &lt;- weight_change_t3$Weight_change &lt;0
+colnames(weight_change_t3) &lt;- c(&quot;BAN_ID&quot;, &quot;time&quot;, &quot;Weight&quot;, &quot;Weight_change&quot;, &quot;weight_relapse&quot;)
+
+# Weight change from T2 to T3
+
+weight_change_t3 &lt;- weight_change_t3[complete.cases(weight_change_t3), ]
+weight_change_t3_plot &lt;- ggplot(weight_change_t3, aes(weight_relapse, Weight_change)) + geom_boxplot() + xlab(&quot;Lost weight from T2 to T3&quot;) + ylab(&quot;Weight change from T2 to T3&quot;)
+
+save_plot(&quot;/Users/laurenblake/Dropbox/Figures/weight_change_t3.png&quot;, weight_change_t3_plot,          base_aspect_ratio = 1)</code></pre>
+</div>
+</div>
+<div id="weights-over-time-stratified-by-weight-loss-at-t3" class="section level1">
+<h1>Weights over time, stratified by weight loss at T3</h1>
+<pre class="r"><code># Subset to time point 1
+
+weight_change_t1 &lt;- weight_change[weight_change$time == 1, 1:5]
+
+# How many are negative and how many are neutral/positive weight gain?
+
+summary(weight_change_t1$Relapse_t3 &gt;0)</code></pre>
+<pre><code>   Mode   FALSE    TRUE    NA&#39;s 
+logical      33       8      14 </code></pre>
+<pre class="r"><code>weight_change_t1[,6] &lt;- weight_change_t1$Relapse_t3 &gt;0
+colnames(weight_change_t1) &lt;- c(&quot;BAN_ID&quot;, &quot;time&quot;, &quot;Weight&quot;, &quot;Weight_change&quot;, &quot;Relapse_t3&quot;, &quot;Relapse_notes&quot;)
+
+weight_change_t1 &lt;- weight_change_t1[complete.cases(weight_change_t1), ]
+
+# Plot weight at T1 
+weight_t1_plot &lt;- ggplot(weight_change_t1, aes(Relapse_notes, Weight)) + geom_boxplot() + xlab(&quot;Lost weight from T2 to T3&quot;) + ylab(&quot;Weight&quot;) + ggtitle(&quot;Weight at T1&quot;) 
+
+save_plot(&quot;/Users/laurenblake/Dropbox/Figures/weight_t1.png&quot;, weight_t1_plot,          base_aspect_ratio = 1)
+
+
+# Subset to time point 2
+
+weight_change_t1 &lt;- weight_change[weight_change$time == 2, 1:5]
+
+# How many are negative and how many are neutral/positive weight gain?
+
+summary(weight_change_t1$Relapse_t3 &gt;0)</code></pre>
+<pre><code>   Mode   FALSE    TRUE    NA&#39;s 
+logical      33       8      14 </code></pre>
+<pre class="r"><code>weight_change_t1[,6] &lt;- weight_change_t1$Relapse_t3 &gt;0
+colnames(weight_change_t1) &lt;- c(&quot;BAN_ID&quot;, &quot;time&quot;, &quot;Weight&quot;, &quot;Weight_change&quot;, &quot;Relapse_t3&quot;, &quot;Relapse_notes&quot;)
+
+weight_change_t1 &lt;- weight_change_t1[complete.cases(weight_change_t1), ]
+
+# Plot weight at T1 
+weight_t2_plot &lt;- ggplot(weight_change_t1, aes(Relapse_notes, Weight)) + geom_boxplot() + xlab(&quot;Lost weight from T2 to T3&quot;) + ylab(&quot;Weight&quot;) + ggtitle(&quot;Weight at T2&quot;) + ylim(53,125)
+
+save_plot(&quot;/Users/laurenblake/Dropbox/Figures/weight_t2.png&quot;, weight_t2_plot,          base_aspect_ratio = 1)
+
+
+# Weight change from T1 to T2
+
+weight_change_t1 &lt;- weight_change_t1[complete.cases(weight_change_t1), ]
+weight_change_t1_plot &lt;- ggplot(weight_change_t1, aes(Relapse_notes, Weight_change)) + geom_boxplot() + xlab(&quot;Lost weight from T2 to T3&quot;) + ylab(&quot;Weight change from T1 to T2&quot;) + ylim(-15,46)
+
+plot_grid(weight_change_t1_plot)</code></pre>
+<p><img src="figure/Weight_change_preliminary_analysis.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>save_plot(&quot;/Users/laurenblake/Dropbox/Figures/weight_change_t1t2.png&quot;, weight_change_t1_plot,          base_aspect_ratio = 1)
+
+
+
+# Subset to time point 3
+
+weight_change_t1 &lt;- weight_change[weight_change$time == 3, 1:5]
+
+# How many are negative and how many are neutral/positive weight gain?
+
+summary(weight_change_t1$Relapse_t3 &gt;0)</code></pre>
+<pre><code>   Mode   FALSE    TRUE    NA&#39;s 
+logical      33       8      14 </code></pre>
+<pre class="r"><code>weight_change_t1[,6] &lt;- weight_change_t1$Relapse_t3 &gt;0
+colnames(weight_change_t1) &lt;- c(&quot;BAN_ID&quot;, &quot;time&quot;, &quot;Weight&quot;, &quot;Weight_change&quot;, &quot;Relapse_t3&quot;, &quot;Relapse_notes&quot;)
+
+weight_change_t1 &lt;- weight_change_t1[complete.cases(weight_change_t1), ]
+
+# Plot weight at T1 
+weight_t3_plot &lt;- ggplot(weight_change_t1, aes(Relapse_notes, Weight)) + geom_boxplot() + xlab(&quot;Lost weight from T2 to T3&quot;) + ylab(&quot;Weight&quot;) + ggtitle(&quot;Weight at T3&quot;) + ylim(53,125)
+
+save_plot(&quot;/Users/laurenblake/Dropbox/Figures/weight_t3.png&quot;, weight_t3_plot, base_aspect_ratio = 1)</code></pre>
+<pre><code>Warning: Removed 6 rows containing non-finite values (stat_boxplot).</code></pre>
+<pre class="r"><code>weight_change_t1_plot &lt;- ggplot(weight_change_t1, aes(Relapse_notes, Weight_change)) + geom_boxplot() + xlab(&quot;Lost weight from T2 to T3&quot;) + ylab(&quot;Weight change from T2 to T3&quot;) + ylim(-15,46)
+
+plot_grid(weight_change_t1_plot)</code></pre>
+<p><img src="figure/Weight_change_preliminary_analysis.Rmd/unnamed-chunk-3-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>save_plot(&quot;/Users/laurenblake/Dropbox/Figures/weight_change_t2t3.png&quot;, weight_change_t1_plot,          base_aspect_ratio = 1)</code></pre>
+</div>
+<div id="lets-look-at-the-8-individuals" class="section level1">
+<h1>Let’s look at the 8 individuals</h1>
+<pre class="r"><code># Let&#39;s look at the weight over time for the individuals with weight loss
+
+weight_change_8 &lt;- weight_change[weight_change$Relapse_t3 == 1,]
+
+weight_change_8 &lt;- weight_change_8[complete.cases(weight_change_8[,1:5]), ]
+
+# Plot the individuals
+
+ind_time &lt;- ggplot(weight_change_8, aes(time, Weight, colour = as.factor(weight_change_8$BAN_ID))) + geom_point() + geom_line() + theme(legend.position=&quot;none&quot;) + xlab(&quot;Time&quot;)
+
+plot_grid(ind_time)</code></pre>
+<p><img src="figure/Weight_change_preliminary_analysis.Rmd/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>save_plot(&quot;/Users/laurenblake/Dropbox/Figures/weight_change_no_t3.png&quot;, ind_time,          base_aspect_ratio = 1)
+
+# Summarize the 
+
+weight_change_8_t3 &lt;- weight_change_8[weight_change_8$time == 3,]
+
+summary(weight_change_8_t3)</code></pre>
+<pre><code>     BAN_ID          time       Weight       Weight_change    
+ Min.   :2207   Min.   :3   Min.   : 71.50   Min.   :-14.500  
+ 1st Qu.:2226   1st Qu.:3   1st Qu.: 95.47   1st Qu.: -6.225  
+ Median :2238   Median :3   Median :100.85   Median : -3.950  
+ Mean   :2241   Mean   :3   Mean   :100.45   Mean   : -5.889  
+ 3rd Qu.:2262   3rd Qu.:3   3rd Qu.:108.92   3rd Qu.: -3.595  
+ Max.   :2270   Max.   :3   Max.   :119.20   Max.   : -2.050  
+                                                              
+   Relapse_t3   Relapse_t4   Relapse_t5  
+ Min.   :1    Min.   :0    Min.   :0.00  
+ 1st Qu.:1    1st Qu.:0    1st Qu.:0.25  
+ Median :1    Median :0    Median :0.50  
+ Mean   :1    Mean   :0    Mean   :0.50  
+ 3rd Qu.:1    3rd Qu.:0    3rd Qu.:0.75  
+ Max.   :1    Max.   :0    Max.   :1.00  
+              NA&#39;s   :6    NA&#39;s   :6     </code></pre>
+</div>
+<div id="correlation-between-weight-relapse-and-other-variables" class="section level1">
+<h1>Correlation between weight relapse and other variables</h1>
+<pre class="r"><code># Read in the clinical covariates
+
+clinical_sample_info &lt;- read.csv(&quot;../data/lm_covar_fixed_random.csv&quot;)
+dim(clinical_sample_info)</code></pre>
+<pre><code>[1] 156  14</code></pre>
+<pre class="r"><code># Subset to T1-T3
+
+clinical_sample &lt;- clinical_sample_info[1:144,(-12)]
+
+dim(clinical_sample)</code></pre>
+<pre><code>[1] 144  13</code></pre>
+<pre class="r"><code># Relapse 
+
+chisq.test(as.factor(clinical_sample$Time), as.factor(clinical_sample$Relapse_t3), simulate.p.value = TRUE)$p.value</code></pre>
+<pre><code>[1] 0.9585207</code></pre>
+<pre class="r"><code># Individual-yes
+
+chisq.test(as.factor(clinical_sample$Individ), as.factor(clinical_sample$Relapse_t3), simulate.p.value = TRUE)$p.value</code></pre>
+<pre><code>[1] 0.0004997501</code></pre>
+<pre class="r"><code># Age-yes
+summary(lm(clinical_sample$Age ~ as.factor(clinical_sample$Relapse_t3)))</code></pre>
+<pre><code>
+Call:
+lm(formula = clinical_sample$Age ~ as.factor(clinical_sample$Relapse_t3))
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+-9.583 -5.583 -1.978  2.022 20.021 
+
+Coefficients:
+                                       Estimate Std. Error t value
+(Intercept)                             23.9785     0.8045  29.806
+as.factor(clinical_sample$Relapse_t3)1   6.6048     1.7763   3.718
+                                       Pr(&gt;|t|)    
+(Intercept)                             &lt; 2e-16 ***
+as.factor(clinical_sample$Relapse_t3)1 0.000311 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 7.758 on 115 degrees of freedom
+  (27 observations deleted due to missingness)
+Multiple R-squared:  0.1073,    Adjusted R-squared:  0.09956 
+F-statistic: 13.83 on 1 and 115 DF,  p-value: 0.0003114</code></pre>
+<pre class="r"><code># BE-no
+
+chisq.test(as.factor(clinical_sample$BE_GROUP), as.factor(clinical_sample$Relapse_t3), simulate.p.value = TRUE)$p.value</code></pre>
+<pre><code>[1] 0.4742629</code></pre>
+<pre class="r"><code># Psych meds- no
+
+chisq.test(as.factor(clinical_sample$psychmeds), as.factor(clinical_sample$Relapse_t3), simulate.p.value = TRUE)$p.value</code></pre>
+<pre><code>[1] 0.8270865</code></pre>
+<pre class="r"><code># RBC-no
+
+summary(lm(clinical_sample$RBC ~ as.factor(clinical_sample$Relapse_t3)))</code></pre>
+<pre><code>
+Call:
+lm(formula = clinical_sample$RBC ~ as.factor(clinical_sample$Relapse_t3))
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1.40750 -0.24763  0.02237  0.27237  1.22237 
+
+Coefficients:
+                                       Estimate Std. Error t value
+(Intercept)                             4.22763    0.04503  93.883
+as.factor(clinical_sample$Relapse_t3)1 -0.01013    0.09943  -0.102
+                                       Pr(&gt;|t|)    
+(Intercept)                              &lt;2e-16 ***
+as.factor(clinical_sample$Relapse_t3)1    0.919    
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 0.4343 on 115 degrees of freedom
+  (27 observations deleted due to missingness)
+Multiple R-squared:  9.034e-05, Adjusted R-squared:  -0.008605 
+F-statistic: 0.01039 on 1 and 115 DF,  p-value: 0.919</code></pre>
+<pre class="r"><code># AE-no
+
+summary(lm(clinical_sample$AE ~ as.factor(clinical_sample$Relapse_t3)))</code></pre>
+<pre><code>
+Call:
+lm(formula = clinical_sample$AE ~ as.factor(clinical_sample$Relapse_t3))
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.25833 -0.06344 -0.06344  0.03656  2.64167 
+
+Coefficients:
+                                       Estimate Std. Error t value
+(Intercept)                             0.16344    0.02970   5.503
+as.factor(clinical_sample$Relapse_t3)1  0.09489    0.06558   1.447
+                                       Pr(&gt;|t|)    
+(Intercept)                            2.29e-07 ***
+as.factor(clinical_sample$Relapse_t3)1    0.151    
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 0.2864 on 115 degrees of freedom
+  (27 observations deleted due to missingness)
+Multiple R-squared:  0.01788,   Adjusted R-squared:  0.009343 
+F-statistic: 2.094 on 1 and 115 DF,  p-value: 0.1506</code></pre>
+<pre class="r"><code># Race- no
+
+chisq.test(as.factor(clinical_sample$Race), as.factor(clinical_sample$Relapse_t3), simulate.p.value = TRUE)$p.value</code></pre>
+<pre><code>[1] 0.4582709</code></pre>
+<pre class="r"><code># AL- no
+
+summary(lm(clinical_sample$AL ~ as.factor(clinical_sample$Relapse_t3)))</code></pre>
+<pre><code>
+Call:
+lm(formula = clinical_sample$AL ~ as.factor(clinical_sample$Relapse_t3))
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1.11505 -0.41505 -0.01505  0.48495  1.38495 
+
+Coefficients:
+                                       Estimate Std. Error t value
+(Intercept)                             1.81505    0.05936  30.580
+as.factor(clinical_sample$Relapse_t3)1 -0.11505    0.13105  -0.878
+                                       Pr(&gt;|t|)    
+(Intercept)                              &lt;2e-16 ***
+as.factor(clinical_sample$Relapse_t3)1    0.382    
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 0.5724 on 115 degrees of freedom
+  (27 observations deleted due to missingness)
+Multiple R-squared:  0.006657,  Adjusted R-squared:  -0.00198 
+F-statistic: 0.7707 on 1 and 115 DF,  p-value: 0.3818</code></pre>
+<pre class="r"><code># AN- no
+
+summary(lm(clinical_sample$AN ~ as.factor(clinical_sample$Relapse_t3)))</code></pre>
+<pre><code>
+Call:
+lm(formula = clinical_sample$AN ~ as.factor(clinical_sample$Relapse_t3))
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-2.2258 -0.9258 -0.3258  0.5742  4.5500 
+
+Coefficients:
+                                       Estimate Std. Error t value
+(Intercept)                              3.0258     0.1282  23.607
+as.factor(clinical_sample$Relapse_t3)1   0.2242     0.2830   0.792
+                                       Pr(&gt;|t|)    
+(Intercept)                              &lt;2e-16 ***
+as.factor(clinical_sample$Relapse_t3)1     0.43    
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 1.236 on 115 degrees of freedom
+  (27 observations deleted due to missingness)
+Multiple R-squared:  0.005428,  Adjusted R-squared:  -0.003221 
+F-statistic: 0.6276 on 1 and 115 DF,  p-value: 0.4299</code></pre>
+<pre class="r"><code># RIN- no
+
+summary(lm(clinical_sample$RIN ~ as.factor(clinical_sample$Relapse_t3)))</code></pre>
+<pre><code>
+Call:
+lm(formula = clinical_sample$RIN ~ as.factor(clinical_sample$Relapse_t3))
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-2.37742 -0.27742  0.02258  0.42258  1.22258 
+
+Coefficients:
+                                       Estimate Std. Error t value
+(Intercept)                             6.67742    0.07043  94.809
+as.factor(clinical_sample$Relapse_t3)1 -0.10659    0.15551  -0.685
+                                       Pr(&gt;|t|)    
+(Intercept)                              &lt;2e-16 ***
+as.factor(clinical_sample$Relapse_t3)1    0.494    
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 0.6792 on 115 degrees of freedom
+  (27 observations deleted due to missingness)
+Multiple R-squared:  0.004069,  Adjusted R-squared:  -0.004592 
+F-statistic: 0.4698 on 1 and 115 DF,  p-value: 0.4945</code></pre>
+<div id="session-information" class="section level2">
+<h2>Session information</h2>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 3.4.3 (2017-11-30)
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+Running under: OS X El Capitan 10.11.6
+
+Matrix products: default
+BLAS: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] cowplot_0.9.3 ggplot2_3.0.0
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_0.12.18      compiler_3.4.3    pillar_1.3.0     
+ [4] git2r_0.23.0      plyr_1.8.4        workflowr_1.1.1  
+ [7] bindr_0.1.1       R.methodsS3_1.7.1 R.utils_2.7.0    
+[10] tools_3.4.3       digest_0.6.16     evaluate_0.11    
+[13] tibble_1.4.2      gtable_0.2.0      pkgconfig_2.0.2  
+[16] rlang_0.2.2       yaml_2.2.0        bindrcpp_0.2.2   
+[19] withr_2.1.2       stringr_1.3.1     dplyr_0.7.6      
+[22] knitr_1.20        rprojroot_1.3-2   grid_3.4.3       
+[25] tidyselect_0.2.4  glue_1.3.0        R6_2.2.2         
+[28] rmarkdown_1.10    purrr_0.2.5       magrittr_1.5     
+[31] whisker_0.3-2     backports_1.1.2   scales_1.0.0     
+[34] htmltools_0.3.6   assertthat_0.2.0  colorspace_1.3-2 
+[37] labeling_0.3      stringi_1.2.4     lazyeval_0.2.1   
+[40] munsell_0.5.0     crayon_1.3.4      R.oo_1.22.0      </code></pre>
+</div>
+</div>
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+<hr>
+<p>
+    
+</p>
+<hr>
+
+<!-- To enable disqus, uncomment the section below and provide your disqus_shortname -->
+
+<!-- disqus
+  <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'rmarkdown'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+-->
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+<hr>
+<p>
+  This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a>
+  analysis was created with
+  <a href="https://github.com/jdblischak/workflowr">workflowr</a> 1.1.1
+</p>
+<hr>
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
