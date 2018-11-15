@@ -1,0 +1,644 @@
+---
+title: "voom_limma"
+author: "Lauren Blake"
+date: "2018-08-13"
+output: workflowr::wflow_html
+editor_options: 
+  chunk_output_type: console
+---
+
+## Load raw counts and clinical data
+
+```{r}
+# Library
+
+library(edgeR)
+library(limma)
+library(VennDiagram)
+library(ggplot2)
+library(cowplot)
+
+# Read in the data
+
+tx.salmon <- readRDS("../data/counts_hg38_gc_txsalmon.RData")
+salmon_counts<- as.data.frame(tx.salmon$counts)
+
+
+#tx.salmon <- readRDS("../data/counts_hg38_gc_dds.RData")
+#salmon_counts<- as.data.frame(tx.salmon)
+
+
+# Subset to T1-T3
+
+salmon_counts <- salmon_counts[,1:144]
+
+# Read in the clinical covariates
+
+clinical_sample_info <- read.csv("../data/lm_covar_fixed_random.csv")
+dim(clinical_sample_info)
+
+# Subset to T1-T3
+
+clinical_sample <- clinical_sample_info[1:144,(-12)]
+
+dim(clinical_sample)
+```
+
+## Differential expression pipeline: TMM+voom+limma
+
+```{r}
+# Filter lowly expressed reads
+
+cpm <- cpm(salmon_counts, log=TRUE)
+
+expr_cutoff <- 1.5
+hist(cpm, main = "log2(CPM) values in unfiltered data", breaks = 100, xlab = "log2(CPM) values")
+abline(v = expr_cutoff, col = "red", lwd = 3)
+
+hist(cpm, main = "log2(CPM) values in unfiltered data", breaks = 100, xlab = "log2(CPM) values", ylim = c(0, 100000))
+abline(v = expr_cutoff, col = "red", lwd = 3)
+
+
+# Basic filtering
+cpm_filtered <- (rowSums(cpm > 1.5) > 72)
+
+genes_in_cutoff <- cpm[cpm_filtered==TRUE,]
+
+hist(as.numeric(unlist(genes_in_cutoff)), main = "log2(CPM) values in filtered data", breaks = 100, xlab = "log2(CPM) values")
+
+# Find the original counts of all of the genes that fit the criteria 
+
+counts_genes_in_cutoff <- salmon_counts[cpm_filtered==TRUE,]
+dim(counts_genes_in_cutoff)
+
+# Filter out hemoglobin
+
+counts_genes_in_cutoff <-  counts_genes_in_cutoff[which( rownames(counts_genes_in_cutoff) != "HBB" ),]
+counts_genes_in_cutoff <-  counts_genes_in_cutoff[which( rownames(counts_genes_in_cutoff) != "HBA2" ),]
+counts_genes_in_cutoff <-  counts_genes_in_cutoff[which( rownames(counts_genes_in_cutoff) != "HBA1" ),]
+
+# Take the TMM of the counts only for the genes that remain after filtering
+
+dge_in_cutoff <- DGEList(counts=as.matrix(counts_genes_in_cutoff), genes=rownames(counts_genes_in_cutoff), group = as.character(t(clinical_sample$Individual)))
+dge_in_cutoff <- calcNormFactors(dge_in_cutoff)
+
+cpm_in_cutoff <- cpm(dge_in_cutoff, normalized.lib.sizes=TRUE, log=TRUE)
+
+# Run PCA on the cpm data
+
+pca_genes <- prcomp(t(cpm_in_cutoff), scale = T, retx = TRUE, center = TRUE)
+
+matrixpca <- pca_genes$x
+PC1 <- matrixpca[,1]
+PC2 <- matrixpca[,2]
+pc3 <- matrixpca[,3]
+pc4 <- matrixpca[,4]
+pc5 <- matrixpca[,5]
+
+pcs <- data.frame(PC1, PC2, pc3, pc4, pc5)
+
+summary <- summary(pca_genes)
+
+head(summary$importance[2,1:5])
+
+norm_count <- ggplot(data=pcs, aes(x=PC1, y=PC2, color= as.factor(clinical_sample$Time))) + geom_point(aes(colour = as.factor(clinical_sample$Time))) + ggtitle("PCA of normalized counts") + scale_color_discrete(name = "Time")
+
+plot_grid(norm_count)
+
+# Make sure certain clinical factors are factors (e.g. presence of psychiatric meds or not)
+
+clinical_sample[,1] <- as.factor(clinical_sample[,1])
+
+clinical_sample[,2] <- as.factor(clinical_sample[,2])
+
+clinical_sample[,4] <- as.factor(clinical_sample[,4])
+
+clinical_sample[,5] <- as.factor(clinical_sample[,5])
+
+clinical_sample[,6] <- as.factor(clinical_sample[,6])
+
+
+# Create the design matrix
+
+# Use the standard treatment-contrasts parametrization. See Ch. 9 of limma
+# User's Guide.
+
+design <- model.matrix(~as.factor(Time) + as.factor(psychmeds) + RBC + RIN, data = clinical_sample)
+colnames(design) <- c("Intercept", "Time2", "Time3", "Psychmeds", "RBC", "RIN")
+
+# Fit model 
+
+# Model individual as a random effect.
+# Recommended to run both voom and duplicateCorrelation twice.
+# https://support.bioconductor.org/p/59700/#67620
+
+cpm.voom <- voom(dge_in_cutoff, design, normalize.method="none")
+#check_rel <- duplicateCorrelation(cpm.voom, design, block = clinical_sample$Individual)
+check_rel_correlation <-  0.1639035
+cpm.voom.corfit <- voom(dge_in_cutoff, design, normalize.method="none", plot = TRUE, block = clinical_sample$Individual, correlation = check_rel_correlation)
+#check_rel <- duplicateCorrelation(cpm.voom.corfit, design, block = clinical_sample$Individual)
+check_rel_correlation <- 0.1638882
+
+# Look at the densities of the gene expression data 
+
+plotDensities(cpm.voom.corfit[,1])
+plotDensities(cpm.voom.corfit[,2])
+plotDensities(cpm.voom.corfit[,3])
+           
+# PCA on the filtered, normalized data
+
+pca_genes <- prcomp(t(cpm.voom.corfit$E), scale = T, retx = TRUE, center = TRUE)
+
+matrixpca <- pca_genes$x
+PC1 <- matrixpca[,1]
+PC2 <- matrixpca[,2]
+pc3 <- matrixpca[,3]
+pc4 <- matrixpca[,4]
+pc5 <- matrixpca[,5]
+pc6 <- matrixpca[,6]
+
+pcs <- data.frame(PC1, PC2, pc3, pc4, pc5, pc6)
+
+summary <- summary(pca_genes)
+
+head(summary$importance[2,1:6])
+
+# PCA by time
+
+norm_count <- ggplot(data=pcs, aes(x=PC1, y=PC2, color=clinical_sample$Time)) + geom_point(aes(colour = as.factor(clinical_sample$Time)))  + scale_color_discrete(name = "Time") + xlab("PC1 (25.1% of variance)") + ylab("PC2 (13.0% of variance)") +  scale_colour_manual(name = "Time", values=c("#E69F00",  "#009E73", "#CC79A7", "#0072B2", "#D55E00"))
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/Hg38_PC12_time12.png", norm_count,
+#          base_aspect_ratio = 1)
+
+norm_count <- ggplot(data=pcs, aes(x=pc3, y=pc4, color=clinical_sample$Time)) + geom_point(aes(colour = as.factor(clinical_sample$Time)))  + scale_color_discrete(name = "Time") + xlab("PC3 (8.8% of variance)") + ylab("PC4 (5.5% of variance)") +  scale_colour_manual(name = "Time", values=c("#E69F00",  "#009E73", "#CC79A7", "#0072B2", "#D55E00"))
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/Hg38_PC34_time12.png", norm_count,
+#          base_aspect_ratio = 1)
+
+norm_count <- ggplot(data=pcs, aes(x=pc5, y=pc6, color=clinical_sample$Time)) + geom_point(aes(colour = as.factor(clinical_sample$Time)))  + scale_color_discrete(name = "Time") + xlab("PC5 (3.3% of variance)") + ylab("PC6 (2.5% of variance)") +  scale_colour_manual(name = "Time", values=c("#E69F00",  "#009E73", "#CC79A7", "#0072B2", "#D55E00"))
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/Hg38_PC56_time12.png", norm_count,
+#          base_aspect_ratio = 1)
+
+
+
+#write.csv(cpm.voom.corfit$E, #"../data/gene_expression_filtered_T1T3.csv")
+
+#write.csv(pcs, "../data/gene_expression_filtered_pcs_T1T3.csv")
+
+# Run lmFit and eBayes in limma
+
+fit <- lmFit(cpm.voom.corfit, design, block=clinical_sample$Individual, correlation=check_rel_correlation)
+
+# In the contrast matrix, have the time points
+
+cm1 <- makeContrasts(Time1v2 = Time2, Time2v3 = Time3 - Time2, levels = design)
+
+#cm1 <- makeContrasts(Time1v2 = Time2, Time2v3 = Time3, levels = design)
+
+# Fit the new model
+diff_species <- contrasts.fit(fit, cm1)
+fit1 <- eBayes(diff_species)
+
+# Pull the limma output for all genes
+
+FDR_level <- 0.01
+
+Time1v2 =topTable(fit1, coef=1, adjust="BH", number=Inf, sort.by="none")
+Time2v3 =topTable(fit1, coef=2, adjust="BH", number=Inf, sort.by="none")
+
+# Compare genes from T1-T2 to genes fromo T2-T3
+
+plot(Time1v2$logFC, Time2v3$logFC)
+plot(Time1v2$t, Time2v3$t)
+plot(Time1v2$adj.P.Val, Time2v3$adj.P.Val)
+
+# Look at the DE genes
+
+dim(Time1v2[which(Time1v2$adj.P.Val < FDR_level),])
+dim(Time2v3[which(Time2v3$adj.P.Val < FDR_level),])
+
+simple_T1_T2 <- Time1v2[which(Time1v2$adj.P.Val < FDR_level),]
+simple_T2_T3 <- Time2v3[which(Time2v3$adj.P.Val < FDR_level),]
+
+
+# Gene to ID conversion document
+
+gene_id <- read.table("../data/Homo_sapiens.GRCh38.v22_table.txt", stringsAsFactors = FALSE)
+colnames(gene_id) <- c("ENSEMBL", "Gene_name")
+
+# Eliminate the feature after the period (for DAVID)
+check <- gsub("\\..*","",gene_id$ENSEMBL)
+
+new_gene_id <- cbind(check, gene_id$Gene_name)
+gene_id <- new_gene_id
+colnames(gene_id) <- c("ENSEMBL", "Gene_name")
+
+# Get gene names after filtering
+genes=as.data.frame(rownames(Time1v2[which(Time1v2$adj.P.Val < FDR_level),]))
+dim(genes)
+
+colnames(genes) <- c("Gene_name")
+
+# Get gene names of the list
+comb_list <- merge(genes, gene_id, by = c("Gene_name"))
+summary(duplicated(comb_list$Gene_name))
+
+comb_list <- comb_list[!duplicated(comb_list$Gene_name),]
+
+dim(comb_list)
+
+write.table(comb_list$ENSEMBL, "../data/DAVID_2covar/simple_T1_T2_05.txt", quote = F, row.names = F, col.names = F)
+
+
+
+
+# Get gene names after filtering
+genes=as.data.frame(rownames(Time2v3[which(Time2v3$adj.P.Val < FDR_level),]))
+dim(genes)
+
+colnames(genes) <- c("Gene_name")
+
+# Get gene names of the list
+comb_list <- merge(genes, gene_id, by = c("Gene_name"))
+summary(duplicated(comb_list$Gene_name))
+
+comb_list <- comb_list[!duplicated(comb_list$Gene_name),]
+
+dim(comb_list)
+
+write.table(comb_list$ENSEMBL, "../data/DAVID_2covar/simple_T2_T3_05.txt", quote = F, row.names = F, col.names = F)
+
+
+
+#write.table(simple_T1_T2$genes, "../data/DAVID_2covar/simple_T1_T2.txt")
+
+head(topTable(fit1, coef=1, adjust="BH", number=100, sort.by="T"))
+head(topTable(fit1, coef=2, adjust="BH", number=100, sort.by="T"))
+```
+
+## Make a Venn Diagram of the DE genes
+
+```{r}
+FDR_level <- 0.01
+
+Time12 <- rownames(Time1v2[which(Time1v2$adj.P.Val < FDR_level),])
+
+Time23 <- rownames(Time2v3[which(Time2v3$adj.P.Val < FDR_level),])
+
+mylist <- list()
+mylist[["DE T1 to T2"]] <- Time12
+mylist[["DE T2 to T3"]] <- Time23
+
+# Make as pdf 
+Four_comp <- venn.diagram(mylist, filename= NULL, main="DE genes between timepoints (5% FDR)", cex=1.5 , fill = NULL, lty=1, height=2000, width=2000, rotation.degree = 0, scaled = FALSE, cat.pos = c(0,0))
+
+grid.draw(Four_comp)
+dev.off()
+
+
+pdf(file = "~/Dropbox/Figures/DET1_T2.pdf")
+  grid.draw(Four_comp)
+dev.off()
+
+
+```
+
+# Re run using weight changes
+
+```{r}
+# Create the design matrix
+
+# Use the standard treatment-contrasts parametrization. See Ch. 9 of limma
+# User's Guide.
+
+design <- model.matrix(~as.factor(Time) + as.factor(psychmeds) + RBC + RIN + Change_weight, data = clinical_sample)
+colnames(design) <- c("Intercept", "Time2", "Time3", "Psychmeds", "RBC", "RIN", "Change_weight")
+
+# Fit model 
+
+# Model individual as a random effect.
+# Recommended to run both voom and duplicateCorrelation twice.
+# https://support.bioconductor.org/p/59700/#67620
+
+cpm.voom <- voom(dge_in_cutoff, design, normalize.method="none")
+#check_rel <- duplicateCorrelation(cpm.voom, design, block = clinical_sample$Individual)
+check_rel_correlation <-  0.1687641
+cpm.voom.corfit <- voom(dge_in_cutoff, design, normalize.method="none", plot = TRUE, block = clinical_sample$Individual, correlation = check_rel_correlation)
+#check_rel <- duplicateCorrelation(cpm.voom.corfit, design, block = clinical_sample$Individual)
+check_rel_correlation <- 0.1687548
+
+# Look at the densities of the gene expression data 
+
+plotDensities(cpm.voom.corfit[,1])
+plotDensities(cpm.voom.corfit[,2])
+plotDensities(cpm.voom.corfit[,3])
+           
+# Run lmFit and eBayes in limma
+
+fit <- lmFit(cpm.voom.corfit, design, block=clinical_sample$Individual, correlation=check_rel_correlation)
+
+# In the contrast matrix, have the time points
+
+cm1 <- makeContrasts(Time1v2 = Time2, Time2v3 = Time3 - Time2, levels = design)
+
+#cm1 <- makeContrasts(Time1v2 = Time2, Time2v3 = Time3, levels = design)
+
+# Fit the new model
+diff_species <- contrasts.fit(fit, cm1)
+fit1 <- eBayes(diff_species)
+
+# Pull the limma output for all genes
+
+FDR_level <- 0.05
+
+Time1v2 =topTable(fit1, coef=1, adjust="BH", number=Inf, sort.by="none")
+Time2v3 =topTable(fit1, coef=2, adjust="BH", number=Inf, sort.by="none")
+
+# Compare genes from T1-T2 to genes fromo T2-T3
+
+plot(Time1v2$logFC, Time2v3$logFC)
+plot(Time1v2$t, Time2v3$t)
+plot(Time1v2$adj.P.Val, Time2v3$adj.P.Val)
+
+# Look at the DE genes
+
+dim(Time1v2[which(Time1v2$adj.P.Val < FDR_level),])
+dim(Time2v3[which(Time2v3$adj.P.Val < FDR_level),])
+
+head(topTable(fit1, coef=1, adjust="BH", number=100, sort.by="T"))
+head(topTable(fit1, coef=2, adjust="BH", number=100, sort.by="T"))
+```
+
+## Make a Venn Diagram of the DE genes
+
+```{r}
+FDR_level <- 0.01
+
+Time12 <- rownames(Time1v2[which(Time1v2$adj.P.Val < FDR_level),])
+
+Time23 <- rownames(Time2v3[which(Time2v3$adj.P.Val < FDR_level),])
+
+mylist <- list()
+mylist[["DE T1 to T2"]] <- Time12
+mylist[["DE T2 to T3"]] <- Time23
+
+# Make as pdf 
+Four_comp <- venn.diagram(mylist, filename= NULL, main="DE genes between timepoints (1% FDR)", cex=1.5 , fill = NULL, lty=1, height=2000, width=2000, rotation.degree = 180, scaled = FALSE, cat.pos = c(0,0))
+
+grid.draw(Four_comp)
+dev.off()
+
+
+pdf(file = "~/Dropbox/Figures/DET1_T2_weight.pdf")
+  grid.draw(Four_comp)
+dev.off()
+
+
+```
+
+
+
+# Perform WGCNA on all DE genes (covariates not regressed out)
+
+```{r}
+# Load the package
+library(WGCNA)
+library(AnnotationDbi)
+library(anRichment)
+
+# The following setting is important, do not omit.
+options(stringsAsFactors = FALSE)
+enableWGCNAThreads()
+allowWGCNAThreads()
+
+# Pull the normalized gene expression for DE genes
+
+genes12=as.data.frame(rownames(Time1v2[which(Time1v2$adj.P.Val < FDR_level),]))
+colnames(genes12) <- c("DE_genes")
+
+#genes23=as.data.frame(rownames(Time2v3[which(Time2v3$adj.P.Val < FDR_level),]))
+#colnames(genes23) <- c("DE_genes")
+
+de_genes <- genes12
+
+check_gene <- rownames(cpm.voom.corfit$E) %in% de_genes$DE_genes
+check_gene <- as.data.frame(check_gene)
+pair_gene <- cbind(cpm.voom.corfit$E, check_gene)
+norm_exp_T1T2 <- pair_gene[which(pair_gene$check_gene == TRUE),1:144]
+
+dim(norm_exp_T1T2) #There are fewer rows than total DE genes because some genes are DE between T1 and T2 as well as T2 and T3
+
+# Reshape the data so that we have 1 gene measurement per column and each sample name per row. 
+
+transposed_norm_exp_T1T2 <- as.data.frame(t(norm_exp_T1T2))
+
+dim(transposed_norm_exp_T1T2)
+```
+
+**Here, we have RNA seq data from 144 samples.** 
+
+## Filter samples and genes with too many missing entries
+
+This step is present in the WGCNA tutorial and is useful when using microarray data or unfiltered RNA seq data(which we are not). 
+
+```{r}
+# Rename so it matches
+datExpr0 <- transposed_norm_exp_T1T2
+
+gsg = goodSamplesGenes(datExpr0, verbose = 3);
+gsg$allOK
+
+if (!gsg$allOK)
+{
+  # Optionally, print the gene and sample names that were removed:
+  if (sum(!gsg$goodGenes)>0) 
+     printFlush(paste("Removing genes:", paste(names(datExpr0)[!gsg$goodGenes], collapse = ", ")));
+  if (sum(!gsg$goodSamples)>0) 
+     printFlush(paste("Removing samples:", paste(rownames(datExpr0)[!gsg$goodSamples], collapse = ", ")));
+  # Remove the offending genes and samples from the data:
+  datExpr0 = datExpr0[gsg$goodSamples, gsg$goodGenes]
+}
+
+```
+**All of our samples passed this filtering step.**
+
+# Sample clustering
+
+This clustering is based on gene expression data for each sample. 
+
+```{r}
+sampleTree = hclust(dist(datExpr0), method = "average");
+plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5, 
+     cex.axis = 1.5, cex.main = 2)
+
+# Plot a line to show the cut
+abline(h = 15, col = "red")
+
+
+
+
+# Determine cluster under the line
+
+clust = cutreeStatic(sampleTree, cutHeight = 15, minSize = 1)
+table(clust)
+# clust 1 contains the samples we want to keep.
+keepSamples = (clust==1)
+datExpr = datExpr0[keepSamples, ]
+nGenes = ncol(datExpr)
+nSamples = nrow(datExpr)
+
+# NOTE: In the WGCNA tutorial, cutHeight = 15. To start, we want to use all of the samples. Therefore, we will use the command below to maintain all samples
+
+datExpr = datExpr0
+
+```
+
+## Add the clinical data (to match the WGCNA tutorial)
+
+```{r}
+datTraits = clinical_sample
+
+datTraits[,1] <- as.numeric(datTraits[,1])
+datTraits[,2] <- as.numeric(datTraits[,2])
+datTraits[,4] <- as.numeric(datTraits[,4])
+datTraits[,5] <- as.numeric(datTraits[,5])
+datTraits[,6] <- as.numeric(datTraits[,6])
+
+dim(datTraits)
+```
+
+## Cluster samples with gene expression and make heatmap of the clinical traits (to match the WGCNA tutorial)
+
+```{r}
+# Re-cluster samples
+sampleTree2 = hclust(dist(datExpr), method = "average")
+# Convert traits to a color representation: white means low, red means high, grey means missing entry
+traitColors = numbers2colors(datTraits, signed = FALSE);
+# Plot the sample dendrogram and the colors underneath.
+plotDendroAndColors(sampleTree2, traitColors,
+                    groupLabels = names(datTraits), 
+                    main = "Sample dendrogram and trait heatmap")
+
+save(datExpr, datTraits, file = "../data/FemaleWeightRestoration-01-dataInput.RData")
+```
+
+**Legend: white means low, red means high, grey means missing entry**
+
+# Gene expression network construction and module detection
+
+```{r}
+# Load the data saved in the previous section
+lnames = load(file = "../data/FemaleWeightRestoration-01-dataInput.RData")
+
+# Choose a set of soft-thresholding powers
+powers = c(c(1:10), seq(from = 12, to=20, by=2))
+# Call the network topology analysis function
+sft = pickSoftThreshold(datExpr, powerVector = powers, verbose = 5)
+# Plot the results:
+# Scale-free topology fit index as a function of the soft-thresholding power
+plot(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+     xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n",
+     main = paste("Scale independence"));
+text(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+     labels=powers,col="red");
+# this line corresponds to using an R^2 cut-off of h
+abline(h=0.90,col="red")
+
+
+
+# Mean connectivity as a function of the soft-thresholding power
+plot(sft$fitIndices[,1], sft$fitIndices[,5],
+     xlab="Soft Threshold (power)",ylab="Mean Connectivity", type="n",
+     main = paste("Mean connectivity"))
+text(sft$fitIndices[,1], sft$fitIndices[,5], labels=powers,col="red")
+
+softPower = 7;
+adjacency = adjacency(datExpr, power = softPower)
+
+# Turn adjacency into topological overlap
+TOM = TOMsimilarity(adjacency);
+dissTOM = 1-TOM
+```
+
+## Hierarchical clustering with TOM (Topological Overlap Matrix)-based dissimilarity
+
+```{r}
+geneTree = hclust(as.dist(dissTOM), method = "average");
+# Plot the resulting clustering tree (dendrogram)
+plot(geneTree, xlab="", sub="", main = "Gene clustering on TOM-based dissimilarity",
+     labels = FALSE, hang = 0.04)
+
+```
+
+## Partion genes with similar gene expression into modules
+
+```{r}
+# We like large modules, so we set the minimum module size relatively high:
+minModuleSize = 30;
+# Module identification using dynamic tree cut:
+dynamicMods = cutreeDynamic(dendro = geneTree, distM = dissTOM, deepSplit = 2, pamRespectsDendro = FALSE, minClusterSize = minModuleSize);
+table(dynamicMods)
+
+# Give each module a color
+
+# Convert numeric lables into colors
+dynamicColors = labels2colors(dynamicMods)
+table(dynamicColors)
+# Plot the dendrogram and colors underneath
+plotDendroAndColors(geneTree, dynamicColors, "Dynamic Tree Cut",
+                    dendroLabels = FALSE, hang = 0.03,
+                    addGuide = TRUE, guideHang = 0.05,
+                    main = "Gene dendrogram and module colors")
+
+module_colors= setdiff(unique(dynamicColors), "grey")
+for (color in module_colors){
+    module=colnames(datExpr0)[which(dynamicColors==color)]
+    
+        # Convert to Ensembl gene ID
+    
+    # Get gene names after filtering
+genes=as.data.frame(module)
+
+colnames(genes) <- c("Gene_name")
+
+# Get gene names of the list
+comb_list <- merge(genes, gene_id, by = c("Gene_name"))
+summary(duplicated(comb_list$Gene_name))
+
+comb_list <- comb_list[!duplicated(comb_list$Gene_name),]
+comb_list <- comb_list$ENSEMBL
+    
+    
+#    write.table(comb_list, paste("../data/module_",color, ".txt",sep=""), sep="\t", row.names=FALSE, col.names=FALSE,quote=FALSE)
+    
+}
+```
+
+**Each color represents a different module.**
+
+
+## Get the eigengenes for the project
+
+```{r}
+# Calculate eigengenes
+MEList = moduleEigengenes(datExpr, colors = dynamicColors)
+MEs = MEList$eigengenes
+
+rownames(MEs) <- rownames(datExpr)
+
+# Save the eigengenes
+
+#write.table(MEs, #"../data/eigengenes_unadj_exp_9_modules.txt", quote = F)
+
+# Quick look at the correlation between eigengenes and weight change
+
+cor(MEs$MEblue, clinical_sample$Change_weight)
+cor(MEs$MEbrown, clinical_sample$Change_weight)
+cor(MEs$MEgreen, clinical_sample$Change_weight)
+cor(MEs$MEgrey, clinical_sample$Change_weight)
+cor(MEs$MEturquoise, clinical_sample$Change_weight)
+cor(MEs$MEyellow, clinical_sample$Change_weight)
+
+```
+

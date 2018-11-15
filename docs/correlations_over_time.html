@@ -1,0 +1,2000 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Lauren Blake" />
+
+<meta name="date" content="2018-07-18" />
+
+<title>Correlations over time</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-5.0.13/css/fa-svg-with-js.css" rel="stylesheet" />
+<script src="site_libs/font-awesome-5.0.13/js/fontawesome-all.min.js"></script>
+<script src="site_libs/font-awesome-5.0.13/js/fa-v4-shims.min.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">weight_restoration</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/jdblischak/workflowr">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Correlations over time</h1>
+<h4 class="author"><em>Lauren Blake</em></h4>
+<h4 class="date"><em>2018-07-18</em></h4>
+
+</div>
+
+
+<p><strong>Last updated:</strong> 2018-08-28</p>
+<strong>workflowr checks:</strong> <small>(Click a bullet for more information)</small>
+<ul>
+<li>
+<p><details> <summary> <strong style="color:red;">✖</strong> <strong>R Markdown file:</strong> uncommitted changes </summary> The R Markdown is untracked by Git. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Environment:</strong> empty </summary></p>
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Seed:</strong> <code>set.seed(12345)</code> </summary></p>
+<p>The command <code>set.seed(12345)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Session information:</strong> recorded </summary></p>
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> 241c630 </summary></p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    analysis/.DS_Store
+    Ignored:    data/.DS_Store
+    Ignored:    data/aux_info/
+    Ignored:    data/hg_38/
+    Ignored:    data/libParams/
+    Ignored:    output/.DS_Store
+
+Untracked files:
+    Untracked:  _workflowr.yml
+    Untracked:  analysis/Collection_dates.Rmd
+    Untracked:  analysis/Converting_IDs.Rmd
+    Untracked:  analysis/Global_variation.Rmd
+    Untracked:  analysis/Preliminary_clinical_covariate.Rmd
+    Untracked:  analysis/VennDiagram2018-07-24_06-55-46.log
+    Untracked:  analysis/VennDiagram2018-07-24_06-56-13.log
+    Untracked:  analysis/VennDiagram2018-07-24_06-56-50.log
+    Untracked:  analysis/VennDiagram2018-07-24_06-58-41.log
+    Untracked:  analysis/VennDiagram2018-07-24_07-00-07.log
+    Untracked:  analysis/VennDiagram2018-07-24_07-00-42.log
+    Untracked:  analysis/VennDiagram2018-07-24_07-01-08.log
+    Untracked:  analysis/VennDiagram2018-08-17_15-13-24.log
+    Untracked:  analysis/VennDiagram2018-08-17_15-13-30.log
+    Untracked:  analysis/VennDiagram2018-08-17_15-15-06.log
+    Untracked:  analysis/VennDiagram2018-08-17_15-16-01.log
+    Untracked:  analysis/VennDiagram2018-08-17_15-17-51.log
+    Untracked:  analysis/VennDiagram2018-08-17_15-18-42.log
+    Untracked:  analysis/VennDiagram2018-08-17_15-19-21.log
+    Untracked:  analysis/VennDiagram2018-08-20_09-07-57.log
+    Untracked:  analysis/VennDiagram2018-08-20_09-08-37.log
+    Untracked:  analysis/VennDiagram2018-08-26_19-54-03.log
+    Untracked:  analysis/VennDiagram2018-08-26_20-47-08.log
+    Untracked:  analysis/VennDiagram2018-08-26_20-49-49.log
+    Untracked:  analysis/VennDiagram2018-08-27_00-04-36.log
+    Untracked:  analysis/VennDiagram2018-08-27_00-09-27.log
+    Untracked:  analysis/VennDiagram2018-08-27_00-13-57.log
+    Untracked:  analysis/VennDiagram2018-08-27_00-16-32.log
+    Untracked:  analysis/VennDiagram2018-08-27_10-00-25.log
+    Untracked:  analysis/VennDiagram2018-08-28_06-03-13.log
+    Untracked:  analysis/VennDiagram2018-08-28_06-03-14.log
+    Untracked:  analysis/VennDiagram2018-08-28_06-05-50.log
+    Untracked:  analysis/VennDiagram2018-08-28_06-06-58.log
+    Untracked:  analysis/VennDiagram2018-08-28_06-10-12.log
+    Untracked:  analysis/VennDiagram2018-08-28_06-10-13.log
+    Untracked:  analysis/VennDiagram2018-08-28_06-18-29.log
+    Untracked:  analysis/VennDiagram2018-08-28_07-22-26.log
+    Untracked:  analysis/VennDiagram2018-08-28_07-22-27.log
+    Untracked:  analysis/background_dds_david.csv
+    Untracked:  analysis/correlations_bet_covariates.Rmd
+    Untracked:  analysis/correlations_over_time.Rmd
+    Untracked:  analysis/genocode_annotation_info.Rmd
+    Untracked:  analysis/genotypes.Rmd
+    Untracked:  analysis/import_transcript_level_estimates.Rmd
+    Untracked:  analysis/test_dds_david.csv
+    Untracked:  analysis/variables_by_time.Rmd
+    Untracked:  analysis/voom_limma.Rmd
+    Untracked:  analysis/voom_limma_hg37.Rmd
+    Untracked:  analysis/voom_limma_weight_change.Rmd
+    Untracked:  data/BAN2 Dates_T1_T2.xlsx
+    Untracked:  data/BAN_DATES.csv
+    Untracked:  data/BAN_DATES.xlsx
+    Untracked:  data/BAN_DATES_txt.csv
+    Untracked:  data/Ban_geno.csv
+    Untracked:  data/Ban_geno.xlsx
+    Untracked:  data/Blood_dates.txt
+    Untracked:  data/DAVID_background.txt
+    Untracked:  data/DAVID_list_T1T2.txt
+    Untracked:  data/DAVID_list_T1T2_weight.txt
+    Untracked:  data/DAVID_list_T2T3.txt
+    Untracked:  data/DAVID_list_T2T3_weight.txt
+    Untracked:  data/DAVID_results/
+    Untracked:  data/DAVID_top100_list_T1T2.txt
+    Untracked:  data/DAVID_top100_list_T1T2_weight.txt
+    Untracked:  data/DAVID_top100_list_T2T3.txt
+    Untracked:  data/DAVID_top100_list_T2T3_weight.txt
+    Untracked:  data/Eigengenes/
+    Untracked:  data/FemaleWeightRestoration-01-dataInput.RData
+    Untracked:  data/FemaleWeightRestoration-resid-01-dataInput.RData
+    Untracked:  data/FemaleWeightRestoration-resid-T1T2-01-dataInput.RData
+    Untracked:  data/HTSF_IDs.sav
+    Untracked:  data/Homo_sapiens.GRCh38.v22_table.txt
+    Untracked:  data/Labels.csv
+    Untracked:  data/Labels.xlsx
+    Untracked:  data/RIN.xlsx
+    Untracked:  data/RIN_over_time.csv
+    Untracked:  data/RIN_over_time.xlsx
+    Untracked:  data/T0_consolid.csv
+    Untracked:  data/T0_consolid.xlsx
+    Untracked:  data/age_t1.txt
+    Untracked:  data/birthday_age.csv
+    Untracked:  data/birthday_age.xlsx
+    Untracked:  data/clinical_sample_info.csv
+    Untracked:  data/clinical_sample_info_geno.csv
+    Untracked:  data/cmd_info.json
+    Untracked:  data/counts_hg37_gc_txsalmon.RData
+    Untracked:  data/counts_hg38_gc.RData
+    Untracked:  data/counts_hg38_gc_dds.RData
+    Untracked:  data/counts_hg38_gc_txsalmon.RData
+    Untracked:  data/covar_lm.csv
+    Untracked:  data/covar_lm_missing.csv
+    Untracked:  data/eigengenes_T1_T2_cov_adj_exp_5_modules.txt
+    Untracked:  data/eigengenes_T1_T2_module_background.txt
+    Untracked:  data/eigengenes_adj_exp_7_modules.txt
+    Untracked:  data/eigengenes_cov_adj_exp_14_modules.txt
+    Untracked:  data/eigengenes_module_background.txt
+    Untracked:  data/eigengenes_unadj_exp_10_modules.txt
+    Untracked:  data/eigengenes_unadj_exp_6_modules.txt
+    Untracked:  data/eigengenes_unadj_exp_9_modules.txt
+    Untracked:  data/files_list.txt
+    Untracked:  data/final_covariates.csv
+    Untracked:  data/gene_exp_values_2202.txt
+    Untracked:  data/gene_exp_values_2209.txt
+    Untracked:  data/gene_exp_values_2218.txt
+    Untracked:  data/gene_exp_values_2220.txt
+    Untracked:  data/gene_exp_values_2226.txt
+    Untracked:  data/gene_exp_values_2228.txt
+    Untracked:  data/gene_expression_filtered_T1T5.csv
+    Untracked:  data/gene_names_58387.txt
+    Untracked:  data/gene_to_tran.txt
+    Untracked:  data/lm_covar_fixed_random.csv
+    Untracked:  data/lm_covar_fixed_random_geno.csv
+    Untracked:  data/logs/
+    Untracked:  data/module_T1T2_cov_adj_blue.txt
+    Untracked:  data/module_T1T2_cov_adj_brown.txt
+    Untracked:  data/module_T1T2_cov_adj_turquoise.txt
+    Untracked:  data/module_T1T2_cov_adj_yellow.txt
+    Untracked:  data/module_adj_cov_merged_blue.txt
+    Untracked:  data/module_adj_cov_merged_brown.txt
+    Untracked:  data/module_adj_cov_merged_cyan.txt
+    Untracked:  data/module_adj_cov_merged_green.txt
+    Untracked:  data/module_adj_cov_merged_greenyellow.txt
+    Untracked:  data/module_adj_cov_merged_magenta.txt
+    Untracked:  data/module_adj_cov_merged_red.txt
+    Untracked:  data/module_adj_cov_merged_salmon.txt
+    Untracked:  data/module_adj_cov_merged_tan.txt
+    Untracked:  data/module_adj_cov_merged_yellow.txt
+    Untracked:  data/module_black.txt
+    Untracked:  data/module_blue.txt
+    Untracked:  data/module_brown.txt
+    Untracked:  data/module_cov_adj_black.txt
+    Untracked:  data/module_cov_adj_blue.txt
+    Untracked:  data/module_cov_adj_brown.txt
+    Untracked:  data/module_cov_adj_cyan.txt
+    Untracked:  data/module_cov_adj_green.txt
+    Untracked:  data/module_cov_adj_greenyellow.txt
+    Untracked:  data/module_cov_adj_magenta.txt
+    Untracked:  data/module_cov_adj_pink.txt
+    Untracked:  data/module_cov_adj_purple.txt
+    Untracked:  data/module_cov_adj_red.txt
+    Untracked:  data/module_cov_adj_salmon.txt
+    Untracked:  data/module_cov_adj_tan.txt
+    Untracked:  data/module_cov_adj_turquoise.txt
+    Untracked:  data/module_cov_adj_yellow.txt
+    Untracked:  data/module_cyan.txt
+    Untracked:  data/module_green.txt
+    Untracked:  data/module_greenyellow.txt
+    Untracked:  data/module_magenta.txt
+    Untracked:  data/module_merged_black.txt
+    Untracked:  data/module_merged_blue.txt
+    Untracked:  data/module_merged_brown.txt
+    Untracked:  data/module_merged_cyan.txt
+    Untracked:  data/module_merged_green.txt
+    Untracked:  data/module_merged_greenyellow.txt
+    Untracked:  data/module_merged_magenta.txt
+    Untracked:  data/module_merged_pink.txt
+    Untracked:  data/module_merged_purple.txt
+    Untracked:  data/module_merged_red.txt
+    Untracked:  data/module_merged_salmon.txt
+    Untracked:  data/module_merged_tan.txt
+    Untracked:  data/module_merged_turquoise.txt
+    Untracked:  data/module_merged_yellow.txt
+    Untracked:  data/module_pink.txt
+    Untracked:  data/module_purple.txt
+    Untracked:  data/module_red.txt
+    Untracked:  data/module_salmon.txt
+    Untracked:  data/module_tan.txt
+    Untracked:  data/module_turquoise.txt
+    Untracked:  data/module_yellow.txt
+    Untracked:  data/notimecovariates.csv
+    Untracked:  data/only_individuals_biomarkers_weight_restoration_study.xlsx
+    Untracked:  data/pcs_genes.csv
+    Untracked:  data/pcs_genes.txt
+    Untracked:  data/rest1t2_BI_hg37.rds
+    Untracked:  data/rest1t2_BI_hg38.rds
+    Untracked:  data/rest1t2_hg37.rds
+    Untracked:  data/rest1t2_psych_meds_BMI_hg37.rds
+    Untracked:  data/rest1t2_psych_meds_hg37.rds
+    Untracked:  data/rest2t3_BI_hg37.rds
+    Untracked:  data/rest2t3_BI_hg38.rds
+    Untracked:  data/rest2t3_hg37.rds
+    Untracked:  data/rest2t3_psych_meds_BMI_hg37.rds
+    Untracked:  data/rest2t3_psych_meds_hg37.rds
+    Untracked:  data/salmon_gene_matrix_bak_reorder_time.txt
+    Untracked:  data/technical_sample_info.csv
+    Untracked:  data/tx_to_gene.txt
+    Untracked:  data/tx_to_gene_37.txt
+    Untracked:  data/usa2.pcawithref.menv.mds_cov
+    Untracked:  data/vsd_values_hg38_gc.rds
+    Untracked:  data/~$Labels.xlsx
+    Untracked:  data/~$T0_consolid.xlsx
+    Untracked:  docs/VennDiagram2018-07-24_06-55-46.log
+    Untracked:  docs/VennDiagram2018-07-24_06-56-13.log
+    Untracked:  docs/VennDiagram2018-07-24_06-56-50.log
+    Untracked:  docs/VennDiagram2018-07-24_06-58-41.log
+    Untracked:  docs/VennDiagram2018-07-24_07-00-07.log
+    Untracked:  docs/VennDiagram2018-07-24_07-00-42.log
+    Untracked:  docs/VennDiagram2018-07-24_07-01-08.log
+    Untracked:  docs/figure/
+
+Unstaged changes:
+    Modified:   analysis/_site.yml
+    Modified:   analysis/about.Rmd
+    Deleted:    analysis/chunks.R
+    Modified:   analysis/index.Rmd
+    Modified:   analysis/license.Rmd
+
+</code></pre>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes. </details>
+</li>
+</ul>
+<hr />
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>The goal of this script is to look for correlations between clinical variables.</p>
+<pre class="r"><code># Load library for plotting
+library(cowplot)</code></pre>
+<pre><code>Warning: package &#39;cowplot&#39; was built under R version 3.4.4</code></pre>
+<pre><code>Loading required package: ggplot2</code></pre>
+<pre><code>Warning: package &#39;ggplot2&#39; was built under R version 3.4.4</code></pre>
+<pre><code>
+Attaching package: &#39;cowplot&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:ggplot2&#39;:
+
+    ggsave</code></pre>
+<pre class="r"><code>library(ggplot2)
+library(gplots)</code></pre>
+<pre><code>
+Attaching package: &#39;gplots&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:stats&#39;:
+
+    lowess</code></pre>
+<pre class="r"><code># Load data
+ind_only &lt;- read.csv(&quot;/Users/laurenblake/Dropbox/Lauren Blake/RNA_seq_project/clinical_sample_info.csv&quot;)
+str(ind_only)</code></pre>
+<pre><code>&#39;data.frame&#39;:   156 obs. of  54 variables:
+ $ From_fastq         : Factor w/ 156 levels &quot;22201T1&quot;,&quot;22201T2&quot;,..: 1 2 3 4 5 6 7 8 9 10 ...
+ $ BAN_ID             : int  2201 2201 2201 2202 2202 2202 2203 2203 2204 2204 ...
+ $ Time               : int  1 2 3 1 2 3 1 2 1 2 ...
+ $ age                : int  15 15 15 33 33 33 22 22 25 24 ...
+ $ psychmeds          : int  1 1 1 0 1 1 0 0 0 0 ...
+ $ bmi                : num  15.4 15.8 19.4 16.1 17.3 ...
+ $ time               : int  1 2 3 1 2 3 1 2 1 2 ...
+ $ current_ED         : int  1 1 1 1 1 1 1 1 1 1 ...
+ $ Time_from_admission: int  5 12 142 1 24 139 1 8 5 69 ...
+ $ Weight             : num  93.9 96.3 118.4 103 110.5 ...
+ $ Change_weight      : num  0 2.4 22.1 0 7.54 14.4 0 12.4 0 36.1 ...
+ $ WBC                : num  6.2 5.9 5.9 4.8 4.7 4.2 7.2 5.3 6.5 7.1 ...
+ $ RBC                : num  4.28 4.28 4.36 4.27 4.19 4.37 4.39 3.97 3.91 4.07 ...
+ $ HGB                : num  13.3 13.2 13.2 13.5 13.5 13.3 14 12.7 13.7 14.6 ...
+ $ HCT                : num  38.4 37.4 38 39.5 39.3 39.2 39.8 36.7 39.6 44.3 ...
+ $ MCV                : int  90 87 87 93 94 90 91 93 101 109 ...
+ $ MCH                : int  31 31 30 32 32 31 32 32 35 36 ...
+ $ MCHC               : int  35 35 35 34 34 34 35 35 35 33 ...
+ $ RDW                : num  13.8 13.3 12.5 12.9 13.2 12.7 13.1 13.4 13.5 12.8 ...
+ $ MPV                : num  7.7 8.3 8.8 7.4 6.5 9.4 7.7 7.9 6.8 6.9 ...
+ $ Platelet           : int  197 226 258 272 270 266 233 211 229 267 ...
+ $ AN                 : num  3.6 3.3 3.9 3.2 2.7 2.1 3.9 2.2 4.6 4.6 ...
+ $ AM                 : num  0.4 0.3 0.4 0.3 0.3 0.3 0.2 0.2 0.4 0.5 ...
+ $ AE                 : num  0.1 0.2 0.1 0.1 0.1 0.1 0.1 0.1 0 0.5 ...
+ $ AB                 : num  0 0 0 0.1 0 0 0.1 0.1 0 0.1 ...
+ $ LUC                : int  2 2 2 2 3 2 2 5 1 2 ...
+ $ NA.                : int  139 144 142 137 140 137 137 142 142 143 ...
+ $ K                  : num  4.1 4.6 4.6 4.6 4.1 4.1 3.9 4.2 3.2 4.8 ...
+ $ CL                 : int  102 102 105 99 101 99 NA 103 104 102 ...
+ $ BUN                : int  12 15 11 15 16 14 16 12 27 25 ...
+ $ CR                 : num  0.63 0.7 0.65 0.72 0.72 0.74 0.85 0.81 0.71 0.56 ...
+ $ Anion              : int  9 15 11 7 10 12 NA 8 7 13 ...
+ $ BUN.1              : num  19 21 17 21 22 19 19 15 38 45 ...
+ $ GLU                : int  80 84 83 69 79 76 76 75 49 76 ...
+ $ CA                 : num  9.8 9.7 9.9 9.5 9.3 9 8.9 8.8 8.6 9.6 ...
+ $ MG                 : num  1.8 1.9 1.8 2.1 2 1.9 2.1 2.1 2.2 2 ...
+ $ PHOS               : num  4.7 5 4.3 4.6 4.8 4.4 4.4 4.4 1.8 4.9 ...
+ $ TP                 : num  8.1 8.2 7.6 6.2 6.9 7.2 6.6 5.8 6.8 7.1 ...
+ $ ALB                : num  NA NA 4.5 NA 3.7 3.9 3.8 3.1 3.8 4.5 ...
+ $ URAC               : num  3.1 4.3 3.6 3.1 3.4 2.9 5.7 3 4.3 3.9 ...
+ $ LD                 : int  377 388 433 333 402 425 335 298 632 847 ...
+ $ AST                : int  NA 23 19 28 24 26 27 27 124 43 ...
+ $ ALT                : int  NA 37 22 36 36 25 58 57 337 90 ...
+ $ ALP                : int  NA 72 83 22 27 33 31 28 55 79 ...
+ $ CK                 : Factor w/ 66 levels &quot;&quot;,&quot;&lt;20.0&quot;,&quot;101&quot;,..: 52 54 59 21 33 65 19 17 30 21 ...
+ $ PT                 : num  11.6 10.9 11.4 11.6 10.1 10.9 11.4 10.7 12.9 10.5 ...
+ $ ESR                : int  NA NA 5 NA 5 5 NA 5 1 1 ...
+ $ Height             : num  65.5 65.5 65.5 67 NA NA 64.5 NA 65 NA ...
+ $ Race               : int  2 2 2 2 2 2 2 2 2 2 ...
+ $ Ethnicity          : int  2 2 2 2 2 2 2 2 2 2 ...
+ $ AL                 : num  1.9 2 1.4 1 1.5 1.6 2.7 2.5 1.4 1.2 ...
+ $ CO2                : Factor w/ 16 levels &quot;&quot;,&quot;&gt;40&quot;,&quot;19&quot;,..: 10 9 8 13 11 8 11 13 13 10 ...
+ $ MDRD               : Factor w/ 8 levels &quot;&quot;,&quot;&gt;=60&quot;,&quot;&gt;60&quot;,..: 8 7 8 2 2 2 2 2 2 2 ...
+ $ bilirubin          : Factor w/ 17 levels &quot;&quot;,&quot;&lt;0.1&quot;,&quot;0&quot;,..: 7 7 9 9 7 7 13 7 12 6 ...</code></pre>
+<pre class="r"><code>dim(ind_only)</code></pre>
+<pre><code>[1] 156  54</code></pre>
+<pre class="r"><code>summary(ind_only)</code></pre>
+<pre><code>   From_fastq      BAN_ID          Time            age       
+ 22201T1:  1   Min.   :2201   Min.   :1.000   Min.   :15.00  
+ 22201T2:  1   1st Qu.:2216   1st Qu.:1.000   1st Qu.:20.00  
+ 22201T3:  1   Median :2233   Median :2.000   Median :24.00  
+ 22202T1:  1   Mean   :2235   Mean   :2.058   Mean   :26.16  
+ 22202T2:  1   3rd Qu.:2254   3rd Qu.:3.000   3rd Qu.:33.00  
+ 22202T3:  1   Max.   :2274   Max.   :5.000   Max.   :52.00  
+ (Other):150                                  NA&#39;s   :7      
+   psychmeds           bmi             time         current_ED    
+ Min.   :0.0000   Min.   :10.68   Min.   :1.000   Min.   :0.0000  
+ 1st Qu.:0.0000   1st Qu.:15.56   1st Qu.:1.000   1st Qu.:1.0000  
+ Median :1.0000   Median :16.97   Median :2.000   Median :1.0000  
+ Mean   :0.6667   Mean   :16.73   Mean   :2.058   Mean   :0.9551  
+ 3rd Qu.:1.0000   3rd Qu.:17.98   3rd Qu.:3.000   3rd Qu.:1.0000  
+ Max.   :1.0000   Max.   :23.32   Max.   :5.000   Max.   :1.0000  
+                                                                  
+ Time_from_admission     Weight       Change_weight          WBC        
+ Min.   :  1.00      Min.   : 54.70   Min.   :-14.500   Min.   : 2.400  
+ 1st Qu.:  4.00      1st Qu.: 92.95   1st Qu.:  0.000   1st Qu.: 4.200  
+ Median : 24.50      Median :100.73   Median :  0.900   Median : 5.300  
+ Mean   : 94.65      Mean   :100.67   Mean   :  5.714   Mean   : 5.468  
+ 3rd Qu.:118.00      3rd Qu.:109.19   3rd Qu.: 10.180   3rd Qu.: 6.500  
+ Max.   :947.00      Max.   :148.90   Max.   : 46.900   Max.   :11.000  
+                                                        NA&#39;s   :33      
+      RBC             HGB             HCT             MCV        
+ Min.   :2.810   Min.   : 9.20   Min.   :27.90   Min.   : 70.00  
+ 1st Qu.:3.865   1st Qu.:11.70   1st Qu.:35.85   1st Qu.: 89.00  
+ Median :4.190   Median :12.70   Median :38.10   Median : 91.00  
+ Mean   :4.149   Mean   :12.63   Mean   :37.86   Mean   : 91.68  
+ 3rd Qu.:4.430   3rd Qu.:13.70   3rd Qu.:40.75   3rd Qu.: 95.00  
+ Max.   :5.450   Max.   :16.00   Max.   :46.10   Max.   :109.00  
+ NA&#39;s   :33      NA&#39;s   :33      NA&#39;s   :33      NA&#39;s   :33      
+      MCH             MCHC            RDW             MPV        
+ Min.   :22.00   Min.   :30.00   Min.   :11.90   Min.   : 6.300  
+ 1st Qu.:30.00   1st Qu.:33.00   1st Qu.:12.80   1st Qu.: 7.400  
+ Median :31.00   Median :33.00   Median :13.40   Median : 7.800  
+ Mean   :30.63   Mean   :33.35   Mean   :13.67   Mean   : 8.042  
+ 3rd Qu.:32.00   3rd Qu.:34.00   3rd Qu.:14.25   3rd Qu.: 8.600  
+ Max.   :36.00   Max.   :36.00   Max.   :18.40   Max.   :10.800  
+ NA&#39;s   :33      NA&#39;s   :33      NA&#39;s   :33      NA&#39;s   :33      
+    Platelet           AN              AM               AE        
+ Min.   :128.0   Min.   :0.800   Min.   :0.1000   Min.   :0.0000  
+ 1st Qu.:195.0   1st Qu.:2.100   1st Qu.:0.2000   1st Qu.:0.1000  
+ Median :238.0   Median :2.800   Median :0.3000   Median :0.1000  
+ Mean   :253.0   Mean   :3.007   Mean   :0.3287   Mean   :0.1744  
+ 3rd Qu.:298.5   3rd Qu.:3.600   3rd Qu.:0.4000   3rd Qu.:0.2000  
+ Max.   :527.0   Max.   :7.800   Max.   :0.7000   Max.   :2.9000  
+ NA&#39;s   :33      NA&#39;s   :34      NA&#39;s   :34       NA&#39;s   :35      
+       AB               LUC             NA.              K        
+ Min.   :0.00000   Min.   :1.000   Min.   :134.0   Min.   :3.100  
+ 1st Qu.:0.00000   1st Qu.:2.000   1st Qu.:138.0   1st Qu.:4.100  
+ Median :0.00000   Median :3.000   Median :140.0   Median :4.300  
+ Mean   :0.02314   Mean   :2.628   Mean   :139.8   Mean   :4.336  
+ 3rd Qu.:0.00000   3rd Qu.:3.000   3rd Qu.:142.0   3rd Qu.:4.600  
+ Max.   :0.10000   Max.   :6.000   Max.   :147.0   Max.   :6.100  
+ NA&#39;s   :35        NA&#39;s   :35      NA&#39;s   :22      NA&#39;s   :22     
+       CL             BUN              CR             Anion       
+ Min.   : 84.0   Min.   : 4.00   Min.   :0.4400   Min.   : 4.000  
+ 1st Qu.:100.2   1st Qu.:12.00   1st Qu.:0.6200   1st Qu.: 8.000  
+ Median :102.0   Median :15.00   Median :0.7000   Median :10.000  
+ Mean   :102.1   Mean   :15.22   Mean   :0.7201   Mean   : 9.913  
+ 3rd Qu.:104.0   3rd Qu.:19.00   3rd Qu.:0.8100   3rd Qu.:12.000  
+ Max.   :113.0   Max.   :36.00   Max.   :1.1500   Max.   :20.000  
+ NA&#39;s   :26      NA&#39;s   :23      NA&#39;s   :23       NA&#39;s   :29      
+     BUN.1            GLU              CA               MG       
+ Min.   : 5.00   Min.   :49.00   Min.   : 8.300   Min.   :1.400  
+ 1st Qu.:16.00   1st Qu.:76.00   1st Qu.: 9.125   1st Qu.:1.875  
+ Median :21.00   Median :81.00   Median : 9.400   Median :1.950  
+ Mean   :22.07   Mean   :80.19   Mean   : 9.416   Mean   :1.955  
+ 3rd Qu.:26.00   3rd Qu.:85.00   3rd Qu.: 9.700   3rd Qu.:2.100  
+ Max.   :82.00   Max.   :98.00   Max.   :10.400   Max.   :2.700  
+ NA&#39;s   :24      NA&#39;s   :25      NA&#39;s   :22       NA&#39;s   :24     
+      PHOS             TP             ALB            URAC      
+ Min.   :1.800   Min.   :4.800   Min.   :2.10   Min.   :1.200  
+ 1st Qu.:4.000   1st Qu.:6.300   1st Qu.:3.80   1st Qu.:2.875  
+ Median :4.300   Median :6.900   Median :4.10   Median :3.400  
+ Mean   :4.327   Mean   :6.895   Mean   :4.09   Mean   :3.428  
+ 3rd Qu.:4.700   3rd Qu.:7.400   3rd Qu.:4.50   3rd Qu.:3.900  
+ Max.   :6.200   Max.   :9.400   Max.   :5.60   Max.   :8.900  
+ NA&#39;s   :25      NA&#39;s   :28      NA&#39;s   :31     NA&#39;s   :24     
+       LD              AST              ALT              ALP        
+ Min.   : 250.0   Min.   : 13.00   Min.   : 12.00   Min.   : 22.00  
+ 1st Qu.: 371.2   1st Qu.: 22.00   1st Qu.: 23.00   1st Qu.: 43.00  
+ Median : 425.5   Median : 27.00   Median : 33.00   Median : 58.00  
+ Mean   : 452.5   Mean   : 37.82   Mean   : 54.07   Mean   : 59.02  
+ 3rd Qu.: 500.0   3rd Qu.: 38.50   3rd Qu.: 51.00   3rd Qu.: 68.00  
+ Max.   :1504.0   Max.   :152.00   Max.   :338.00   Max.   :166.00  
+ NA&#39;s   :26       NA&#39;s   :25       NA&#39;s   :25       NA&#39;s   :27      
+       CK            PT             ESR             Height     
+        : 28   Min.   : 9.20   Min.   : 1.000   Min.   :60.00  
+ 34     :  6   1st Qu.:10.50   1st Qu.: 4.000   1st Qu.:63.00  
+ 41     :  6   Median :11.20   Median : 6.000   Median :64.45  
+ 23     :  4   Mean   :11.19   Mean   : 7.975   Mean   :64.90  
+ 28     :  4   3rd Qu.:11.80   3rd Qu.:10.000   3rd Qu.:65.98  
+ 29     :  4   Max.   :14.30   Max.   :49.000   Max.   :72.00  
+ (Other):104   NA&#39;s   :26      NA&#39;s   :35       NA&#39;s   :72     
+      Race         Ethnicity           AL             CO2          MDRD   
+ Min.   :2.000   Min.   :1.000   Min.   :0.600          :22   &gt;=60   :97  
+ 1st Qu.:2.000   1st Qu.:2.000   1st Qu.:1.400   28     :22          :34  
+ Median :2.000   Median :2.000   Median :1.750   27     :19   &gt;60    :11  
+ Mean   :2.115   Mean   :1.962   Mean   :1.796   26     :17   N/A    : 9  
+ 3rd Qu.:2.000   3rd Qu.:2.000   3rd Qu.:2.200   29     :17   57     : 2  
+ Max.   :5.000   Max.   :2.000   Max.   :3.400   31     :14   53.34  : 1  
+                                 NA&#39;s   :34      (Other):45   (Other): 2  
+   bilirubin 
+ 0.4    :32  
+        :28  
+ 0.3    :24  
+ 0.5    :20  
+ 0.6    :16  
+ 0.2    :14  
+ (Other):22  </code></pre>
+</div>
+<div id="weight-over-time" class="section level1">
+<h1>Weight over time</h1>
+<pre class="r"><code>weight_over_time &lt;- ggplot(ind_only[1:144,], aes(as.factor(ind_only$time[1:144]), ind_only$Weight[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = &quot;dashed&quot;, aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position=&quot;none&quot;) + xlab(&quot;Time&quot;) + ylab(&quot;Weight (pounds)&quot;) + ggtitle(&quot;Weight changes over time&quot;)
+
+plot_grid(weight_over_time)</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#save_plot(&quot;/Users/laurenblake/Dropbox/Lauren Blake/Figures/weight_over_time.png&quot;, weight_over_time,
+#          base_aspect_ratio = 1)</code></pre>
+</div>
+<div id="weight-over-time-boxplot" class="section level1">
+<h1>Weight over time (boxplot)</h1>
+<pre class="r"><code>weight_over_time &lt;- ggplot(ind_only, aes(as.factor(ind_only$Time), ind_only$Weight)) + geom_boxplot(aes(color = as.factor(ind_only$Time)), outlier.shape = NA) + geom_jitter(aes(as.factor(ind_only$Time), ind_only$Weight), size = 0.5, width = 0.1) + theme(legend.position=&quot;none&quot;) + xlab(&quot;Timepoint&quot;) + ylab(&quot;Weight (lbs)&quot;) 
+
+plot_grid(weight_over_time)</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#save_plot(&quot;/Users/laurenblake/Dropbox/Lauren Blake/Figures/Weight_over_time_boxplot.png&quot;, weight_over_time,
+#          base_aspect_ratio = 1)</code></pre>
+</div>
+<div id="bmi-over-time-boxplot" class="section level1">
+<h1>BMI over time (boxplot)</h1>
+<pre class="r"><code>weight_over_time &lt;- ggplot(ind_only, aes(as.factor(ind_only$Time), ind_only$bmi)) + geom_boxplot(aes(color = as.factor(ind_only$Time)), outlier.shape = NA) + geom_jitter(aes(as.factor(ind_only$Time), ind_only$bmi), size = 0.5, width = 0.1) + theme(legend.position=&quot;none&quot;) + xlab(&quot;Timepoint&quot;) + ylab(&quot;BMI&quot;) 
+
+plot_grid(weight_over_time)</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#save_plot(&quot;/Users/laurenblake/Dropbox/Lauren Blake/Figures/BMI_over_time_boxplot.png&quot;, weight_over_time,
+#          base_aspect_ratio = 1)</code></pre>
+</div>
+<div id="weight-over-days-rather-than-t1-t2-etc." class="section level1">
+<h1>Weight over days (rather than T1, T2, etc.)</h1>
+<pre class="r"><code>weight_over_time &lt;- ggplot(ind_only[1:144,], aes(ind_only$Time_from_admission[1:144], ind_only$Weight[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = &quot;dashed&quot;, aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position=&quot;none&quot;) + xlab(&quot;Days from admission to blood draw&quot;) + ylab(&quot;Weight (pounds)&quot;) + ggtitle(&quot;Weight changes over time&quot;)
+
+plot_grid(weight_over_time)</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#save_plot(&quot;/Users/laurenblake/Dropbox/Lauren Blake/Figures/weight_over_time_normalized.png&quot;, weight_over_time,
+#          base_aspect_ratio = 1)</code></pre>
+</div>
+<div id="weight-over-days-rather-than-t1-t2-etc.-1" class="section level1">
+<h1>Weight over days (rather than T1, T2, etc.)</h1>
+<pre class="r"><code>weight_over_time &lt;- ggplot(ind_only[1:144,], aes(ind_only$Time_from_admission[1:144], ind_only$Weight[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = &quot;dashed&quot;) + geom_point(aes(color = as.factor(ind_only$current_ED[1:144]))) + xlab(&quot;Days from admission to blood draw&quot;) + ylab(&quot;Weight (pounds)&quot;) + ggtitle(&quot;Weight changes over time&quot;)  + labs(color=&#39;Eating disorder status&#39;) 
+
+plot_grid(weight_over_time)</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#save_plot(&quot;/Users/laurenblake/Dropbox/Lauren Blake/Figures/weight_over_time_by_recovery_status.png&quot;, weight_over_time,
+#          base_aspect_ratio = 1)</code></pre>
+</div>
+<div id="look-at-all-correlations-for-numeric-variables" class="section level1">
+<h1>Look at all correlations for numeric variables</h1>
+<pre class="r"><code># Eliminate factors
+check_cor &lt;- ind_only[,-1]
+check_cor &lt;- check_cor[,1:(ncol(check_cor)-6)]
+
+# Obtain correlations and pvalues
+
+pvalues &lt;- matrix(data = NA, nrow = ncol(check_cor), ncol = ncol(check_cor))
+colnames(pvalues) &lt;- colnames(check_cor)
+rownames(pvalues) &lt;- colnames(check_cor)
+correlations &lt;- matrix(data = NA, nrow = ncol(check_cor), ncol = ncol(check_cor))
+colnames(correlations) &lt;- colnames(check_cor)
+rownames(correlations) &lt;- colnames(check_cor)
+
+j=1
+for (j in 1:ncol(check_cor)){
+  
+  for (i in 1:ncol(check_cor)){
+      
+  test &lt;- cor.test(as.numeric(check_cor[,j]), as.numeric(check_cor[,i]), method = &quot;pearson&quot;)
+      
+  #Get the correlation
+  
+  test$estimate
+  
+  #Get the p-value 
+  test$p.value
+
+  pvalues[j, i] &lt;- test$p.value
+  correlations[j, i] &lt;- test$estimate
+  
+  i = i+1
+  }
+  j=j+1
+}</code></pre>
+<pre><code>Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero</code></pre>
+<pre class="r"><code>#correlations
+#pvalues
+
+#Find which variables are p-value &lt; 0.05
+pvalues &lt;=0.05</code></pre>
+<pre><code>                    BAN_ID  Time   age psychmeds   bmi  time current_ED
+BAN_ID                TRUE  TRUE FALSE     FALSE FALSE  TRUE       TRUE
+Time                  TRUE  TRUE  TRUE      TRUE  TRUE  TRUE       TRUE
+age                  FALSE  TRUE  TRUE      TRUE  TRUE  TRUE       TRUE
+psychmeds            FALSE  TRUE  TRUE      TRUE  TRUE  TRUE      FALSE
+bmi                  FALSE  TRUE  TRUE      TRUE  TRUE  TRUE       TRUE
+time                  TRUE  TRUE  TRUE      TRUE  TRUE  TRUE       TRUE
+current_ED            TRUE  TRUE  TRUE     FALSE  TRUE  TRUE       TRUE
+Time_from_admission   TRUE  TRUE  TRUE     FALSE  TRUE  TRUE       TRUE
+Weight               FALSE  TRUE  TRUE      TRUE  TRUE  TRUE       TRUE
+Change_weight        FALSE FALSE FALSE     FALSE  TRUE FALSE      FALSE
+WBC                   TRUE FALSE FALSE     FALSE  TRUE FALSE      FALSE
+RBC                   TRUE FALSE  TRUE     FALSE FALSE FALSE      FALSE
+HGB                  FALSE FALSE  TRUE     FALSE  TRUE FALSE      FALSE
+HCT                  FALSE FALSE  TRUE     FALSE  TRUE FALSE      FALSE
+MCV                  FALSE FALSE FALSE     FALSE FALSE FALSE      FALSE
+MCH                   TRUE FALSE FALSE     FALSE FALSE FALSE      FALSE
+MCHC                  TRUE  TRUE FALSE     FALSE FALSE  TRUE       TRUE
+RDW                  FALSE FALSE FALSE     FALSE FALSE FALSE      FALSE
+MPV                  FALSE FALSE FALSE      TRUE FALSE FALSE      FALSE
+Platelet             FALSE FALSE  TRUE     FALSE FALSE FALSE      FALSE
+AN                    TRUE FALSE FALSE     FALSE  TRUE FALSE      FALSE
+AM                   FALSE FALSE FALSE     FALSE FALSE FALSE      FALSE
+AE                   FALSE FALSE FALSE     FALSE FALSE FALSE      FALSE
+AB                   FALSE FALSE FALSE      TRUE FALSE FALSE      FALSE
+LUC                  FALSE FALSE FALSE     FALSE FALSE FALSE      FALSE
+NA.                   TRUE FALSE  TRUE     FALSE FALSE FALSE      FALSE
+K                    FALSE FALSE FALSE     FALSE  TRUE FALSE      FALSE
+CL                   FALSE FALSE FALSE     FALSE FALSE FALSE      FALSE
+BUN                  FALSE FALSE FALSE     FALSE FALSE FALSE      FALSE
+CR                    TRUE FALSE FALSE      TRUE FALSE FALSE      FALSE
+Anion                 TRUE FALSE  TRUE     FALSE  TRUE FALSE      FALSE
+BUN.1                FALSE FALSE FALSE      TRUE FALSE FALSE      FALSE
+GLU                  FALSE FALSE FALSE     FALSE  TRUE FALSE      FALSE
+CA                    TRUE FALSE  TRUE     FALSE FALSE FALSE      FALSE
+MG                   FALSE FALSE  TRUE     FALSE FALSE FALSE      FALSE
+PHOS                 FALSE FALSE FALSE     FALSE FALSE FALSE      FALSE
+TP                    TRUE  TRUE  TRUE     FALSE  TRUE  TRUE      FALSE
+ALB                  FALSE  TRUE  TRUE     FALSE  TRUE  TRUE      FALSE
+URAC                 FALSE FALSE FALSE     FALSE FALSE FALSE      FALSE
+LD                   FALSE FALSE FALSE     FALSE FALSE FALSE      FALSE
+AST                  FALSE FALSE FALSE     FALSE FALSE FALSE      FALSE
+ALT                  FALSE FALSE FALSE     FALSE FALSE FALSE      FALSE
+ALP                  FALSE FALSE FALSE     FALSE FALSE FALSE      FALSE
+CK                   FALSE  TRUE FALSE     FALSE FALSE  TRUE       TRUE
+PT                   FALSE  TRUE FALSE     FALSE  TRUE  TRUE      FALSE
+ESR                  FALSE FALSE  TRUE     FALSE FALSE FALSE      FALSE
+Height               FALSE FALSE FALSE     FALSE FALSE FALSE         NA
+                    Time_from_admission Weight Change_weight   WBC   RBC
+BAN_ID                             TRUE  FALSE         FALSE  TRUE  TRUE
+Time                               TRUE   TRUE         FALSE FALSE FALSE
+age                                TRUE   TRUE         FALSE FALSE  TRUE
+psychmeds                         FALSE   TRUE         FALSE FALSE FALSE
+bmi                                TRUE   TRUE          TRUE  TRUE FALSE
+time                               TRUE   TRUE         FALSE FALSE FALSE
+current_ED                         TRUE   TRUE         FALSE FALSE FALSE
+Time_from_admission                TRUE   TRUE         FALSE FALSE  TRUE
+Weight                             TRUE   TRUE          TRUE  TRUE  TRUE
+Change_weight                     FALSE   TRUE          TRUE  TRUE FALSE
+WBC                               FALSE   TRUE          TRUE  TRUE  TRUE
+RBC                                TRUE   TRUE         FALSE  TRUE  TRUE
+HGB                               FALSE   TRUE         FALSE  TRUE  TRUE
+HCT                                TRUE   TRUE         FALSE  TRUE  TRUE
+MCV                               FALSE  FALSE         FALSE  TRUE  TRUE
+MCH                               FALSE  FALSE         FALSE FALSE  TRUE
+MCHC                              FALSE  FALSE          TRUE FALSE FALSE
+RDW                               FALSE  FALSE         FALSE  TRUE FALSE
+MPV                               FALSE  FALSE         FALSE  TRUE FALSE
+Platelet                          FALSE  FALSE         FALSE FALSE  TRUE
+AN                                FALSE   TRUE          TRUE  TRUE FALSE
+AM                                FALSE  FALSE          TRUE  TRUE FALSE
+AE                                FALSE  FALSE          TRUE  TRUE FALSE
+AB                                FALSE  FALSE         FALSE  TRUE  TRUE
+LUC                               FALSE  FALSE         FALSE  TRUE  TRUE
+NA.                               FALSE  FALSE         FALSE FALSE FALSE
+K                                 FALSE   TRUE         FALSE FALSE FALSE
+CL                                FALSE  FALSE         FALSE FALSE  TRUE
+BUN                               FALSE  FALSE          TRUE  TRUE  TRUE
+CR                                FALSE  FALSE          TRUE FALSE  TRUE
+Anion                             FALSE   TRUE         FALSE FALSE  TRUE
+BUN.1                             FALSE  FALSE          TRUE  TRUE  TRUE
+GLU                               FALSE   TRUE          TRUE FALSE FALSE
+CA                                FALSE  FALSE         FALSE FALSE  TRUE
+MG                                FALSE   TRUE         FALSE FALSE FALSE
+PHOS                              FALSE  FALSE          TRUE FALSE FALSE
+TP                                 TRUE   TRUE         FALSE FALSE  TRUE
+ALB                                TRUE   TRUE         FALSE FALSE  TRUE
+URAC                              FALSE  FALSE         FALSE FALSE  TRUE
+LD                                FALSE  FALSE          TRUE FALSE FALSE
+AST                               FALSE  FALSE         FALSE FALSE FALSE
+ALT                               FALSE  FALSE          TRUE FALSE FALSE
+ALP                                TRUE  FALSE          TRUE FALSE FALSE
+CK                                 TRUE  FALSE         FALSE FALSE FALSE
+PT                                FALSE   TRUE          TRUE FALSE FALSE
+ESR                               FALSE  FALSE         FALSE FALSE  TRUE
+Height                            FALSE   TRUE         FALSE FALSE FALSE
+                      HGB   HCT   MCV   MCH  MCHC   RDW   MPV Platelet
+BAN_ID              FALSE FALSE FALSE  TRUE  TRUE FALSE FALSE    FALSE
+Time                FALSE FALSE FALSE FALSE  TRUE FALSE FALSE    FALSE
+age                  TRUE  TRUE FALSE FALSE FALSE FALSE FALSE     TRUE
+psychmeds           FALSE FALSE FALSE FALSE FALSE FALSE  TRUE    FALSE
+bmi                  TRUE  TRUE FALSE FALSE FALSE FALSE FALSE    FALSE
+time                FALSE FALSE FALSE FALSE  TRUE FALSE FALSE    FALSE
+current_ED          FALSE FALSE FALSE FALSE  TRUE FALSE FALSE    FALSE
+Time_from_admission FALSE  TRUE FALSE FALSE FALSE FALSE FALSE    FALSE
+Weight               TRUE  TRUE FALSE FALSE FALSE FALSE FALSE    FALSE
+Change_weight       FALSE FALSE FALSE FALSE  TRUE FALSE FALSE    FALSE
+WBC                  TRUE  TRUE  TRUE FALSE FALSE  TRUE  TRUE    FALSE
+RBC                  TRUE  TRUE  TRUE  TRUE FALSE FALSE FALSE     TRUE
+HGB                  TRUE  TRUE FALSE  TRUE  TRUE  TRUE FALSE     TRUE
+HCT                  TRUE  TRUE FALSE  TRUE  TRUE  TRUE FALSE     TRUE
+MCV                 FALSE FALSE  TRUE  TRUE FALSE  TRUE FALSE    FALSE
+MCH                  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE FALSE    FALSE
+MCHC                 TRUE  TRUE FALSE  TRUE  TRUE  TRUE FALSE     TRUE
+RDW                  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE FALSE    FALSE
+MPV                 FALSE FALSE FALSE FALSE FALSE FALSE  TRUE     TRUE
+Platelet             TRUE  TRUE FALSE FALSE  TRUE FALSE  TRUE     TRUE
+AN                   TRUE  TRUE  TRUE FALSE FALSE FALSE FALSE    FALSE
+AM                  FALSE FALSE FALSE FALSE  TRUE FALSE FALSE    FALSE
+AE                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE     TRUE
+AB                   TRUE  TRUE FALSE FALSE FALSE FALSE FALSE    FALSE
+LUC                  TRUE  TRUE FALSE FALSE FALSE  TRUE FALSE    FALSE
+NA.                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE    FALSE
+K                   FALSE FALSE FALSE FALSE FALSE FALSE FALSE    FALSE
+CL                   TRUE  TRUE  TRUE FALSE FALSE FALSE FALSE    FALSE
+BUN                 FALSE FALSE  TRUE  TRUE FALSE FALSE FALSE    FALSE
+CR                  FALSE FALSE  TRUE FALSE  TRUE  TRUE FALSE    FALSE
+Anion                TRUE  TRUE FALSE FALSE FALSE FALSE FALSE    FALSE
+BUN.1                TRUE  TRUE  TRUE  TRUE  TRUE FALSE FALSE    FALSE
+GLU                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE    FALSE
+CA                   TRUE  TRUE FALSE FALSE FALSE FALSE FALSE    FALSE
+MG                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE    FALSE
+PHOS                FALSE FALSE FALSE FALSE  TRUE FALSE FALSE    FALSE
+TP                   TRUE  TRUE FALSE FALSE FALSE FALSE FALSE    FALSE
+ALB                  TRUE  TRUE FALSE FALSE FALSE FALSE FALSE    FALSE
+URAC                 TRUE  TRUE FALSE FALSE  TRUE FALSE FALSE    FALSE
+LD                  FALSE FALSE FALSE FALSE  TRUE FALSE FALSE    FALSE
+AST                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE     TRUE
+ALT                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE     TRUE
+ALP                 FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE     TRUE
+CK                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE    FALSE
+PT                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE    FALSE
+ESR                  TRUE  TRUE  TRUE FALSE FALSE FALSE FALSE     TRUE
+Height              FALSE FALSE FALSE FALSE FALSE FALSE FALSE     TRUE
+                       AN    AM    AE    AB   LUC   NA.     K    CL   BUN
+BAN_ID               TRUE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE
+Time                FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+age                 FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE
+psychmeds           FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE
+bmi                  TRUE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE
+time                FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+current_ED          FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+Time_from_admission FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+Weight               TRUE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE
+Change_weight        TRUE  TRUE  TRUE FALSE FALSE FALSE FALSE FALSE  TRUE
+WBC                  TRUE  TRUE  TRUE  TRUE  TRUE FALSE FALSE FALSE  TRUE
+RBC                 FALSE FALSE FALSE  TRUE  TRUE FALSE FALSE  TRUE  TRUE
+HGB                  TRUE FALSE FALSE  TRUE  TRUE FALSE FALSE  TRUE FALSE
+HCT                  TRUE FALSE FALSE  TRUE  TRUE FALSE FALSE  TRUE FALSE
+MCV                  TRUE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE  TRUE
+MCH                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+MCHC                FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+RDW                 FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+MPV                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+Platelet            FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+AN                   TRUE  TRUE FALSE  TRUE  TRUE FALSE FALSE FALSE  TRUE
+AM                   TRUE  TRUE  TRUE  TRUE FALSE FALSE FALSE FALSE FALSE
+AE                  FALSE  TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+AB                   TRUE  TRUE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE
+LUC                  TRUE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+NA.                 FALSE FALSE FALSE FALSE FALSE  TRUE FALSE  TRUE FALSE
+K                   FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE
+CL                  FALSE FALSE FALSE FALSE FALSE  TRUE FALSE  TRUE FALSE
+BUN                  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+CR                  FALSE  TRUE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE
+Anion               FALSE FALSE FALSE FALSE FALSE  TRUE FALSE  TRUE FALSE
+BUN.1                TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+GLU                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+CA                  FALSE FALSE FALSE FALSE FALSE  TRUE  TRUE  TRUE FALSE
+MG                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+PHOS                FALSE  TRUE FALSE FALSE  TRUE FALSE  TRUE FALSE FALSE
+TP                  FALSE FALSE FALSE FALSE FALSE  TRUE FALSE  TRUE FALSE
+ALB                 FALSE FALSE FALSE FALSE FALSE  TRUE FALSE  TRUE FALSE
+URAC                FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE
+LD                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+AST                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE
+ALT                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+ALP                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+CK                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+PT                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+ESR                 FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE FALSE FALSE
+Height              FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+                       CR Anion BUN.1   GLU    CA    MG  PHOS    TP   ALB
+BAN_ID               TRUE  TRUE FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE
+Time                FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE  TRUE
+age                 FALSE  TRUE FALSE FALSE  TRUE  TRUE FALSE  TRUE  TRUE
+psychmeds            TRUE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+bmi                 FALSE  TRUE FALSE  TRUE FALSE FALSE FALSE  TRUE  TRUE
+time                FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE  TRUE
+current_ED          FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+Time_from_admission FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE  TRUE
+Weight              FALSE  TRUE FALSE  TRUE FALSE  TRUE FALSE  TRUE  TRUE
+Change_weight        TRUE FALSE  TRUE  TRUE FALSE FALSE  TRUE FALSE FALSE
+WBC                 FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+RBC                  TRUE  TRUE  TRUE FALSE  TRUE FALSE FALSE  TRUE  TRUE
+HGB                 FALSE  TRUE  TRUE FALSE  TRUE FALSE FALSE  TRUE  TRUE
+HCT                 FALSE  TRUE  TRUE FALSE  TRUE FALSE FALSE  TRUE  TRUE
+MCV                  TRUE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+MCH                 FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+MCHC                 TRUE FALSE  TRUE FALSE FALSE FALSE  TRUE FALSE FALSE
+RDW                  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+MPV                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+Platelet            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AN                  FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+AM                   TRUE FALSE  TRUE FALSE FALSE FALSE  TRUE FALSE FALSE
+AE                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AB                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+LUC                 FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE
+NA.                  TRUE  TRUE FALSE FALSE  TRUE FALSE FALSE  TRUE  TRUE
+K                   FALSE FALSE FALSE FALSE  TRUE FALSE  TRUE FALSE FALSE
+CL                  FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE  TRUE  TRUE
+BUN                 FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+CR                   TRUE  TRUE  TRUE FALSE  TRUE  TRUE FALSE  TRUE  TRUE
+Anion                TRUE  TRUE  TRUE FALSE  TRUE FALSE FALSE  TRUE  TRUE
+BUN.1                TRUE  TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+GLU                 FALSE FALSE FALSE  TRUE FALSE  TRUE  TRUE FALSE FALSE
+CA                   TRUE  TRUE FALSE FALSE  TRUE FALSE  TRUE  TRUE  TRUE
+MG                   TRUE FALSE FALSE  TRUE FALSE  TRUE FALSE FALSE  TRUE
+PHOS                FALSE FALSE FALSE  TRUE  TRUE FALSE  TRUE FALSE FALSE
+TP                   TRUE  TRUE FALSE FALSE  TRUE FALSE FALSE  TRUE  TRUE
+ALB                  TRUE  TRUE FALSE FALSE  TRUE  TRUE FALSE  TRUE  TRUE
+URAC                 TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+LD                   TRUE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+AST                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+ALT                 FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+ALP                 FALSE FALSE FALSE FALSE FALSE  TRUE FALSE  TRUE FALSE
+CK                   TRUE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE  TRUE
+PT                  FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+ESR                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+Height              FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+                     URAC    LD   AST   ALT   ALP    CK    PT   ESR Height
+BAN_ID              FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  FALSE
+Time                FALSE FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE  FALSE
+age                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE  FALSE
+psychmeds           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  FALSE
+bmi                 FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE  FALSE
+time                FALSE FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE  FALSE
+current_ED          FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE     NA
+Time_from_admission FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE FALSE  FALSE
+Weight              FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE   TRUE
+Change_weight       FALSE  TRUE FALSE  TRUE  TRUE FALSE  TRUE FALSE  FALSE
+WBC                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  FALSE
+RBC                  TRUE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE  FALSE
+HGB                  TRUE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE  FALSE
+HCT                  TRUE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE  FALSE
+MCV                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE  FALSE
+MCH                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  FALSE
+MCHC                 TRUE  TRUE FALSE FALSE  TRUE FALSE FALSE FALSE  FALSE
+RDW                 FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE  FALSE
+MPV                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  FALSE
+Platelet            FALSE FALSE  TRUE  TRUE  TRUE FALSE FALSE  TRUE   TRUE
+AN                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  FALSE
+AM                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  FALSE
+AE                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE   TRUE
+AB                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  FALSE
+LUC                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE  FALSE
+NA.                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE  FALSE
+K                   FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  FALSE
+CL                   TRUE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE  FALSE
+BUN                 FALSE  TRUE FALSE  TRUE FALSE FALSE  TRUE FALSE  FALSE
+CR                   TRUE  TRUE FALSE FALSE FALSE  TRUE FALSE FALSE  FALSE
+Anion               FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  FALSE
+BUN.1               FALSE  TRUE FALSE  TRUE FALSE FALSE  TRUE FALSE  FALSE
+GLU                 FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  FALSE
+CA                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  FALSE
+MG                  FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE  FALSE
+PHOS                FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  FALSE
+TP                  FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE FALSE  FALSE
+ALB                 FALSE FALSE FALSE FALSE FALSE  TRUE FALSE  TRUE  FALSE
+URAC                 TRUE FALSE FALSE FALSE  TRUE  TRUE FALSE FALSE  FALSE
+LD                  FALSE  TRUE  TRUE  TRUE  TRUE FALSE  TRUE FALSE  FALSE
+AST                 FALSE  TRUE  TRUE  TRUE  TRUE FALSE FALSE FALSE  FALSE
+ALT                 FALSE  TRUE  TRUE  TRUE  TRUE FALSE FALSE FALSE  FALSE
+ALP                  TRUE  TRUE  TRUE  TRUE  TRUE FALSE FALSE  TRUE  FALSE
+CK                   TRUE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE  FALSE
+PT                  FALSE  TRUE FALSE FALSE FALSE FALSE  TRUE FALSE  FALSE
+ESR                 FALSE FALSE FALSE FALSE  TRUE FALSE FALSE  TRUE  FALSE
+Height              FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE   TRUE</code></pre>
+</div>
+<div id="how-highly-correlated-are-the-lab-measurements" class="section level1">
+<h1>How highly correlated are the lab measurements?</h1>
+<pre class="r"><code># Pull lab values
+lab_values &lt;- c(11:46, 50:53)
+check_cor_labs &lt;- ind_only[,lab_values]
+
+# Obtain correlations and pvalues
+
+pvalues &lt;- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(pvalues) &lt;- colnames(check_cor_labs)
+rownames(pvalues) &lt;- colnames(check_cor_labs)
+correlations &lt;- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(correlations) &lt;- colnames(check_cor_labs)
+rownames(correlations) &lt;- colnames(check_cor_labs)
+
+j=1
+for (j in 1:ncol(check_cor_labs)){
+  
+  for (i in 1:ncol(check_cor_labs)){
+      
+  test &lt;- cor.test(as.numeric(check_cor_labs[,j]), as.numeric(check_cor_labs[,i]), method = &quot;pearson&quot;)
+      
+  #Get the correlation
+  
+  test$estimate
+  
+  #Get the p-value 
+  test$p.value
+
+  pvalues[j, i] &lt;- test$p.value
+  correlations[j, i] &lt;- test$estimate
+  
+  i = i+1
+  }
+  j=j+1
+}
+
+#correlations
+#pvalues
+
+#Find which variables are p-value &lt; 0.05
+pvalues &lt;=0.05</code></pre>
+<pre><code>              Change_weight   WBC   RBC   HGB   HCT   MCV   MCH  MCHC
+Change_weight          TRUE  TRUE FALSE FALSE FALSE FALSE FALSE  TRUE
+WBC                    TRUE  TRUE  TRUE  TRUE  TRUE  TRUE FALSE FALSE
+RBC                   FALSE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE FALSE
+HGB                   FALSE  TRUE  TRUE  TRUE  TRUE FALSE  TRUE  TRUE
+HCT                   FALSE  TRUE  TRUE  TRUE  TRUE FALSE  TRUE  TRUE
+MCV                   FALSE  TRUE  TRUE FALSE FALSE  TRUE  TRUE FALSE
+MCH                   FALSE FALSE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+MCHC                   TRUE FALSE FALSE  TRUE  TRUE FALSE  TRUE  TRUE
+RDW                   FALSE  TRUE FALSE  TRUE  TRUE  TRUE  TRUE  TRUE
+MPV                   FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+Platelet              FALSE FALSE  TRUE  TRUE  TRUE FALSE FALSE  TRUE
+AN                     TRUE  TRUE FALSE  TRUE  TRUE  TRUE FALSE FALSE
+AM                     TRUE  TRUE FALSE FALSE FALSE FALSE FALSE  TRUE
+AE                     TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+AB                    FALSE  TRUE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+LUC                   FALSE  TRUE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+NA.                   FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+K                     FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+CL                    FALSE FALSE  TRUE  TRUE  TRUE  TRUE FALSE FALSE
+BUN                    TRUE  TRUE  TRUE FALSE FALSE  TRUE  TRUE FALSE
+CR                     TRUE FALSE  TRUE FALSE FALSE  TRUE FALSE  TRUE
+Anion                 FALSE FALSE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+BUN.1                  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE  TRUE
+GLU                    TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+CA                    FALSE FALSE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+MG                    FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+PHOS                   TRUE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+TP                    FALSE FALSE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+ALB                   FALSE FALSE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+URAC                  FALSE FALSE  TRUE  TRUE  TRUE FALSE FALSE  TRUE
+LD                     TRUE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+AST                   FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+ALT                    TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+ALP                    TRUE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+CK                    FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+PT                     TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+Ethnicity             FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AL                    FALSE  TRUE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+CO2                    TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+MDRD                  FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+                RDW   MPV Platelet    AN    AM    AE    AB   LUC   NA.
+Change_weight FALSE FALSE    FALSE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+WBC            TRUE  TRUE    FALSE  TRUE  TRUE  TRUE  TRUE  TRUE FALSE
+RBC           FALSE FALSE     TRUE FALSE FALSE FALSE  TRUE  TRUE FALSE
+HGB            TRUE FALSE     TRUE  TRUE FALSE FALSE  TRUE  TRUE FALSE
+HCT            TRUE FALSE     TRUE  TRUE FALSE FALSE  TRUE  TRUE FALSE
+MCV            TRUE FALSE    FALSE  TRUE FALSE FALSE FALSE FALSE FALSE
+MCH            TRUE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+MCHC           TRUE FALSE     TRUE FALSE  TRUE FALSE FALSE FALSE FALSE
+RDW            TRUE FALSE    FALSE FALSE FALSE FALSE FALSE  TRUE FALSE
+MPV           FALSE  TRUE     TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+Platelet      FALSE  TRUE     TRUE FALSE FALSE  TRUE FALSE FALSE FALSE
+AN            FALSE FALSE    FALSE  TRUE  TRUE FALSE  TRUE  TRUE FALSE
+AM            FALSE FALSE    FALSE  TRUE  TRUE  TRUE  TRUE FALSE FALSE
+AE            FALSE FALSE     TRUE FALSE  TRUE  TRUE FALSE FALSE FALSE
+AB            FALSE FALSE    FALSE  TRUE  TRUE FALSE  TRUE FALSE FALSE
+LUC            TRUE FALSE    FALSE  TRUE FALSE FALSE FALSE  TRUE FALSE
+NA.           FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+K             FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+CL            FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+BUN           FALSE FALSE    FALSE  TRUE FALSE FALSE FALSE FALSE FALSE
+CR             TRUE FALSE    FALSE FALSE  TRUE FALSE FALSE FALSE  TRUE
+Anion         FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+BUN.1         FALSE FALSE    FALSE  TRUE  TRUE FALSE FALSE FALSE FALSE
+GLU           FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+CA            FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+MG            FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+PHOS          FALSE FALSE    FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE
+TP            FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+ALB           FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+URAC          FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+LD            FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AST           FALSE FALSE     TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+ALT           FALSE FALSE     TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+ALP            TRUE FALSE     TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+CK            FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+PT            FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+Ethnicity     FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AL            FALSE FALSE    FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+CO2           FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+MDRD          FALSE FALSE    FALSE  TRUE FALSE FALSE FALSE FALSE FALSE
+                  K    CL   BUN    CR Anion BUN.1   GLU    CA    MG  PHOS
+Change_weight FALSE FALSE  TRUE  TRUE FALSE  TRUE  TRUE FALSE FALSE  TRUE
+WBC           FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+RBC           FALSE  TRUE  TRUE  TRUE  TRUE  TRUE FALSE  TRUE FALSE FALSE
+HGB           FALSE  TRUE FALSE FALSE  TRUE  TRUE FALSE  TRUE FALSE FALSE
+HCT           FALSE  TRUE FALSE FALSE  TRUE  TRUE FALSE  TRUE FALSE FALSE
+MCV           FALSE  TRUE  TRUE  TRUE FALSE  TRUE FALSE FALSE FALSE FALSE
+MCH           FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+MCHC          FALSE FALSE FALSE  TRUE FALSE  TRUE FALSE FALSE FALSE  TRUE
+RDW           FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+MPV           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+Platelet      FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AN            FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+AM            FALSE FALSE FALSE  TRUE FALSE  TRUE FALSE FALSE FALSE  TRUE
+AE            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AB            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+LUC           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+NA.           FALSE  TRUE FALSE  TRUE  TRUE FALSE FALSE  TRUE FALSE FALSE
+K              TRUE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE  TRUE
+CL            FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE
+BUN           FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+CR            FALSE FALSE FALSE  TRUE  TRUE  TRUE FALSE  TRUE  TRUE FALSE
+Anion         FALSE  TRUE FALSE  TRUE  TRUE  TRUE FALSE  TRUE FALSE FALSE
+BUN.1         FALSE FALSE  TRUE  TRUE  TRUE  TRUE FALSE FALSE FALSE FALSE
+GLU           FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE  TRUE  TRUE
+CA             TRUE  TRUE FALSE  TRUE  TRUE FALSE FALSE  TRUE FALSE  TRUE
+MG            FALSE FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE  TRUE FALSE
+PHOS           TRUE FALSE FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE  TRUE
+TP            FALSE  TRUE FALSE  TRUE  TRUE FALSE FALSE  TRUE FALSE FALSE
+ALB           FALSE  TRUE FALSE  TRUE  TRUE FALSE FALSE  TRUE  TRUE FALSE
+URAC          FALSE  TRUE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+LD            FALSE FALSE  TRUE  TRUE FALSE  TRUE FALSE FALSE FALSE FALSE
+AST           FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+ALT           FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+ALP           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE
+CK            FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+PT            FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+Ethnicity     FALSE  TRUE  TRUE FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE
+AL            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+CO2           FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE
+MDRD          FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE
+                 TP   ALB  URAC    LD   AST   ALT   ALP    CK    PT
+Change_weight FALSE FALSE FALSE  TRUE FALSE  TRUE  TRUE FALSE  TRUE
+WBC           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+RBC            TRUE  TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+HGB            TRUE  TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+HCT            TRUE  TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+MCV           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+MCH           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+MCHC          FALSE FALSE  TRUE  TRUE FALSE FALSE  TRUE FALSE FALSE
+RDW           FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE
+MPV           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+Platelet      FALSE FALSE FALSE FALSE  TRUE  TRUE  TRUE FALSE FALSE
+AN            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AM            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AE            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AB            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+LUC           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+NA.            TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+K             FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+CL             TRUE  TRUE  TRUE FALSE  TRUE FALSE FALSE FALSE FALSE
+BUN           FALSE FALSE FALSE  TRUE FALSE  TRUE FALSE FALSE  TRUE
+CR             TRUE  TRUE  TRUE  TRUE FALSE FALSE FALSE  TRUE FALSE
+Anion          TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+BUN.1         FALSE FALSE FALSE  TRUE FALSE  TRUE FALSE FALSE  TRUE
+GLU           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+CA             TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+MG            FALSE  TRUE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE
+PHOS          FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+TP             TRUE  TRUE FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE
+ALB            TRUE  TRUE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE
+URAC          FALSE FALSE  TRUE FALSE FALSE FALSE  TRUE  TRUE FALSE
+LD            FALSE FALSE FALSE  TRUE  TRUE  TRUE  TRUE FALSE  TRUE
+AST           FALSE FALSE FALSE  TRUE  TRUE  TRUE  TRUE FALSE FALSE
+ALT           FALSE FALSE FALSE  TRUE  TRUE  TRUE  TRUE FALSE FALSE
+ALP            TRUE FALSE  TRUE  TRUE  TRUE  TRUE  TRUE FALSE FALSE
+CK             TRUE  TRUE  TRUE FALSE FALSE FALSE FALSE  TRUE FALSE
+PT            FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE  TRUE
+Ethnicity     FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+AL            FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE
+CO2           FALSE FALSE  TRUE FALSE  TRUE  TRUE FALSE  TRUE FALSE
+MDRD           TRUE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE
+              Ethnicity    AL   CO2  MDRD
+Change_weight     FALSE FALSE  TRUE FALSE
+WBC               FALSE  TRUE FALSE  TRUE
+RBC               FALSE  TRUE FALSE FALSE
+HGB               FALSE  TRUE FALSE FALSE
+HCT               FALSE  TRUE FALSE FALSE
+MCV               FALSE FALSE FALSE FALSE
+MCH               FALSE FALSE FALSE FALSE
+MCHC              FALSE FALSE FALSE FALSE
+RDW               FALSE FALSE FALSE FALSE
+MPV               FALSE FALSE FALSE FALSE
+Platelet          FALSE FALSE FALSE FALSE
+AN                FALSE FALSE FALSE  TRUE
+AM                FALSE  TRUE FALSE FALSE
+AE                FALSE FALSE FALSE FALSE
+AB                FALSE FALSE FALSE FALSE
+LUC               FALSE FALSE FALSE FALSE
+NA.               FALSE FALSE  TRUE FALSE
+K                 FALSE FALSE FALSE FALSE
+CL                 TRUE FALSE  TRUE FALSE
+BUN                TRUE FALSE FALSE FALSE
+CR                FALSE FALSE FALSE FALSE
+Anion             FALSE FALSE  TRUE FALSE
+BUN.1             FALSE FALSE FALSE FALSE
+GLU               FALSE FALSE FALSE FALSE
+CA                 TRUE FALSE FALSE  TRUE
+MG                 TRUE FALSE FALSE FALSE
+PHOS              FALSE FALSE FALSE FALSE
+TP                FALSE FALSE FALSE  TRUE
+ALB               FALSE FALSE FALSE FALSE
+URAC               TRUE FALSE  TRUE FALSE
+LD                FALSE  TRUE FALSE FALSE
+AST               FALSE FALSE  TRUE FALSE
+ALT               FALSE FALSE  TRUE FALSE
+ALP               FALSE FALSE FALSE FALSE
+CK                FALSE FALSE  TRUE  TRUE
+PT                FALSE FALSE FALSE FALSE
+Ethnicity          TRUE FALSE FALSE FALSE
+AL                FALSE  TRUE FALSE FALSE
+CO2               FALSE FALSE  TRUE  TRUE
+MDRD              FALSE FALSE  TRUE  TRUE</code></pre>
+<pre class="r"><code># need data as matrix
+mm &lt;- as.matrix(correlations, ncol = ncol(correlations))
+
+heatmap.2(x = mm, Rowv = FALSE, Colv = FALSE, dendrogram = &quot;none&quot;,
+         notecex = 2,
+          trace = &quot;none&quot;, key = TRUE)</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># Run on just the
+
+lab_values &lt;- c(7, 11:46, 50:53)
+check_cor_labs &lt;- ind_only[,lab_values]
+lab_values_1 &lt;- check_cor_labs[which(check_cor_labs$time == 1),2:40]
+lab_values_2 &lt;- check_cor_labs[which(check_cor_labs$time == 2),2:40]
+lab_values_3 &lt;- check_cor_labs[which(check_cor_labs$time == 3),2:40]
+
+check_cor_labs &lt;- lab_values_1
+
+
+pvalues &lt;- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(pvalues) &lt;- colnames(check_cor_labs)
+rownames(pvalues) &lt;- colnames(check_cor_labs)
+correlations &lt;- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(correlations) &lt;- colnames(check_cor_labs)
+rownames(correlations) &lt;- colnames(check_cor_labs)
+
+j=1
+for (j in 1:ncol(check_cor_labs)){
+  
+  for (i in 1:ncol(check_cor_labs)){
+      
+  test &lt;- cor.test(as.numeric(check_cor_labs[,j]), as.numeric(check_cor_labs[,i]), method = &quot;pearson&quot;)
+      
+  #Get the correlation
+  
+  test$estimate
+  
+  #Get the p-value 
+  test$p.value
+
+  pvalues[j, i] &lt;- test$p.value
+  correlations[j, i] &lt;- test$estimate
+  
+  i = i+1
+  }
+  j=j+1
+}</code></pre>
+<pre><code>Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero
+
+Warning in cor(x, y): the standard deviation is zero</code></pre>
+<pre class="r"><code>#correlations
+#pvalues
+
+#Find which variables are p-value &lt; 0.05
+pvalues &lt;=0.05</code></pre>
+<pre><code>              Change_weight   WBC   RBC   HGB   HCT   MCV   MCH  MCHC
+Change_weight          TRUE    NA    NA    NA    NA    NA    NA    NA
+WBC                      NA  TRUE FALSE  TRUE  TRUE FALSE FALSE FALSE
+RBC                      NA FALSE  TRUE  TRUE  TRUE  TRUE  TRUE FALSE
+HGB                      NA  TRUE  TRUE  TRUE  TRUE FALSE  TRUE  TRUE
+HCT                      NA  TRUE  TRUE  TRUE  TRUE FALSE FALSE  TRUE
+MCV                      NA FALSE  TRUE FALSE FALSE  TRUE  TRUE FALSE
+MCH                      NA FALSE  TRUE  TRUE FALSE  TRUE  TRUE  TRUE
+MCHC                     NA FALSE FALSE  TRUE  TRUE FALSE  TRUE  TRUE
+RDW                      NA FALSE FALSE  TRUE  TRUE FALSE  TRUE  TRUE
+MPV                      NA FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+Platelet                 NA FALSE  TRUE  TRUE  TRUE FALSE FALSE  TRUE
+AN                       NA  TRUE FALSE  TRUE  TRUE FALSE FALSE FALSE
+AM                       NA  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+AE                       NA  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+AB                       NA FALSE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+LUC                      NA FALSE FALSE FALSE  TRUE FALSE FALSE FALSE
+NA.                   FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+K                     FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+CL                    FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE
+BUN                   FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE
+CR                    FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+Anion                 FALSE FALSE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+BUN.1                 FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE
+GLU                   FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+CA                    FALSE FALSE  TRUE FALSE  TRUE FALSE FALSE FALSE
+MG                    FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+PHOS                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+TP                       NA FALSE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+ALB                      NA FALSE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+URAC                  FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+LD                    FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+AST                   FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+ALT                   FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+ALP                      NA FALSE FALSE  TRUE FALSE FALSE FALSE  TRUE
+CK                    FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+PT                    FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+Ethnicity             FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AL                       NA  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+CO2                   FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+                RDW   MPV Platelet    AN    AM    AE    AB   LUC   NA.
+Change_weight    NA    NA       NA    NA    NA    NA    NA    NA FALSE
+WBC           FALSE FALSE    FALSE  TRUE  TRUE  TRUE FALSE FALSE  TRUE
+RBC           FALSE FALSE     TRUE FALSE FALSE FALSE  TRUE FALSE FALSE
+HGB            TRUE FALSE     TRUE  TRUE FALSE FALSE  TRUE FALSE FALSE
+HCT            TRUE FALSE     TRUE  TRUE FALSE FALSE  TRUE  TRUE FALSE
+MCV           FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+MCH            TRUE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+MCHC           TRUE FALSE     TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+RDW            TRUE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+MPV           FALSE  TRUE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+Platelet      FALSE FALSE     TRUE FALSE FALSE  TRUE FALSE FALSE FALSE
+AN            FALSE FALSE    FALSE  TRUE  TRUE  TRUE FALSE  TRUE  TRUE
+AM            FALSE FALSE    FALSE  TRUE  TRUE FALSE FALSE FALSE  TRUE
+AE            FALSE FALSE     TRUE  TRUE FALSE  TRUE FALSE FALSE FALSE
+AB            FALSE FALSE    FALSE FALSE FALSE FALSE  TRUE FALSE FALSE
+LUC           FALSE FALSE    FALSE  TRUE FALSE FALSE FALSE  TRUE FALSE
+NA.           FALSE FALSE    FALSE  TRUE  TRUE FALSE FALSE FALSE  TRUE
+K             FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+CL            FALSE FALSE    FALSE FALSE FALSE FALSE FALSE  TRUE FALSE
+BUN           FALSE FALSE    FALSE  TRUE FALSE FALSE FALSE FALSE FALSE
+CR            FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+Anion         FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+BUN.1         FALSE FALSE    FALSE  TRUE FALSE FALSE FALSE FALSE FALSE
+GLU           FALSE FALSE    FALSE FALSE FALSE  TRUE FALSE FALSE FALSE
+CA            FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+MG            FALSE FALSE    FALSE FALSE FALSE FALSE FALSE  TRUE FALSE
+PHOS          FALSE FALSE    FALSE FALSE FALSE  TRUE FALSE FALSE FALSE
+TP            FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+ALB           FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+URAC          FALSE  TRUE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+LD            FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AST           FALSE FALSE     TRUE FALSE FALSE  TRUE FALSE  TRUE FALSE
+ALT           FALSE FALSE    FALSE FALSE FALSE  TRUE FALSE  TRUE FALSE
+ALP            TRUE FALSE     TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+CK            FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+PT            FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+Ethnicity     FALSE FALSE    FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AL            FALSE FALSE    FALSE  TRUE  TRUE FALSE FALSE FALSE FALSE
+CO2           FALSE FALSE     TRUE FALSE FALSE FALSE FALSE FALSE  TRUE
+                  K    CL   BUN    CR Anion BUN.1   GLU    CA    MG  PHOS
+Change_weight FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+WBC           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+RBC           FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE
+HGB           FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE
+HCT           FALSE FALSE FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE
+MCV           FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+MCH           FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+MCHC          FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+RDW           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+MPV           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+Platelet      FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AN            FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+AM            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AE            FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE  TRUE
+AB            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+LUC           FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE
+NA.           FALSE FALSE FALSE  TRUE  TRUE FALSE FALSE  TRUE FALSE FALSE
+K              TRUE FALSE FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE  TRUE
+CL            FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE
+BUN           FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+CR            FALSE FALSE FALSE  TRUE  TRUE  TRUE FALSE  TRUE  TRUE FALSE
+Anion         FALSE  TRUE FALSE  TRUE  TRUE FALSE FALSE  TRUE FALSE FALSE
+BUN.1         FALSE FALSE  TRUE  TRUE FALSE  TRUE FALSE FALSE FALSE FALSE
+GLU            TRUE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE  TRUE  TRUE
+CA             TRUE  TRUE FALSE  TRUE  TRUE FALSE FALSE  TRUE FALSE  TRUE
+MG            FALSE FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE  TRUE FALSE
+PHOS           TRUE FALSE FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE  TRUE
+TP            FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE
+ALB            TRUE  TRUE FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE
+URAC          FALSE  TRUE  TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+LD            FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE
+AST           FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE  TRUE
+ALT            TRUE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE  TRUE
+ALP           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+CK            FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+PT            FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE
+Ethnicity     FALSE  TRUE  TRUE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE
+AL            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+CO2            TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+                 TP   ALB  URAC    LD   AST   ALT   ALP    CK    PT
+Change_weight    NA    NA FALSE FALSE FALSE FALSE    NA FALSE FALSE
+WBC           FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE
+RBC            TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+HGB            TRUE  TRUE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE
+HCT            TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+MCV           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+MCH           FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+MCHC          FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE
+RDW           FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE
+MPV           FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+Platelet      FALSE FALSE FALSE FALSE  TRUE FALSE  TRUE FALSE FALSE
+AN            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AM            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AE            FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE FALSE FALSE
+AB            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+LUC           FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE FALSE FALSE
+NA.            TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+K             FALSE  TRUE FALSE FALSE FALSE  TRUE FALSE FALSE FALSE
+CL             TRUE  TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+BUN           FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE
+CR            FALSE FALSE  TRUE FALSE FALSE FALSE FALSE  TRUE FALSE
+Anion          TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+BUN.1         FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+GLU           FALSE FALSE FALSE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+CA             TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+MG            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+PHOS          FALSE FALSE FALSE FALSE  TRUE  TRUE FALSE FALSE FALSE
+TP             TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+ALB            TRUE  TRUE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+URAC          FALSE FALSE  TRUE FALSE FALSE FALSE FALSE  TRUE FALSE
+LD            FALSE FALSE FALSE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+AST           FALSE FALSE FALSE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+ALT           FALSE FALSE FALSE  TRUE  TRUE  TRUE FALSE FALSE FALSE
+ALP           FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE
+CK            FALSE FALSE  TRUE FALSE FALSE FALSE FALSE  TRUE FALSE
+PT            FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE  TRUE
+Ethnicity        NA FALSE FALSE FALSE FALSE FALSE FALSE FALSE FALSE
+AL            FALSE FALSE FALSE  TRUE FALSE FALSE FALSE FALSE FALSE
+CO2           FALSE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE FALSE
+              Ethnicity    AL   CO2
+Change_weight     FALSE    NA FALSE
+WBC               FALSE  TRUE FALSE
+RBC               FALSE FALSE FALSE
+HGB               FALSE FALSE FALSE
+HCT               FALSE FALSE FALSE
+MCV               FALSE FALSE FALSE
+MCH               FALSE FALSE FALSE
+MCHC              FALSE FALSE FALSE
+RDW               FALSE FALSE FALSE
+MPV               FALSE FALSE FALSE
+Platelet          FALSE FALSE  TRUE
+AN                FALSE  TRUE FALSE
+AM                FALSE  TRUE FALSE
+AE                FALSE FALSE FALSE
+AB                FALSE FALSE FALSE
+LUC               FALSE FALSE FALSE
+NA.               FALSE FALSE  TRUE
+K                 FALSE FALSE  TRUE
+CL                 TRUE FALSE FALSE
+BUN                TRUE FALSE FALSE
+CR                FALSE FALSE FALSE
+Anion              TRUE FALSE FALSE
+BUN.1             FALSE FALSE FALSE
+GLU               FALSE FALSE FALSE
+CA                 TRUE FALSE FALSE
+MG                FALSE FALSE FALSE
+PHOS              FALSE FALSE FALSE
+TP                   NA FALSE FALSE
+ALB               FALSE FALSE FALSE
+URAC              FALSE FALSE FALSE
+LD                FALSE  TRUE FALSE
+AST               FALSE FALSE FALSE
+ALT               FALSE FALSE FALSE
+ALP               FALSE FALSE  TRUE
+CK                FALSE FALSE FALSE
+PT                FALSE FALSE FALSE
+Ethnicity          TRUE FALSE FALSE
+AL                FALSE  TRUE FALSE
+CO2               FALSE FALSE  TRUE</code></pre>
+<pre class="r"><code># need data as matrix
+mm &lt;- as.matrix(correlations, ncol = ncol(correlations))
+
+
+heatmap.2(x = mm, Rowv = FALSE, Colv = FALSE, dendrogram = &quot;none&quot;,
+         notecex = 2,
+          trace = &quot;none&quot;, key = TRUE)</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-8-2.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="how-do-labs-change-over-time-with-changes-in-bmi-with-age" class="section level1">
+<h1>How do labs change over time? With changes in BMI? With age?</h1>
+<pre class="r"><code># WBC versus time
+weight_over_time &lt;- ggplot(ind_only[1:144,], aes(ind_only$Time_from_admission[1:144], ind_only$WBC[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = &quot;dashed&quot;, aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position=&quot;none&quot;) + xlab(&quot;Days from admission to blood draw&quot;) + ylab(&quot;WBC count&quot;) + ggtitle(&quot;WBC changes over time&quot;)
+
+plot_grid(weight_over_time)</code></pre>
+<pre><code>Warning: Removed 19 rows containing missing values (geom_path).</code></pre>
+<pre><code>Warning: Removed 21 rows containing missing values (geom_point).</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#save_plot(&quot;/Users/laurenblake/Dropbox/Lauren Blake/Figures/WBC_over_time_normalized.png&quot;, weight_over_time,
+#          base_aspect_ratio = 1)
+
+
+
+# WBC versus BMI
+weight_over_time &lt;- ggplot(ind_only[1:144,], aes(ind_only$bmi[1:144], ind_only$WBC[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = &quot;dashed&quot;, aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position=&quot;none&quot;) + xlab(&quot;BMI&quot;) + ylab(&quot;WBC count&quot;) + ggtitle(&quot;WBC count versus BMI&quot;)
+
+plot_grid(weight_over_time)</code></pre>
+<pre><code>Warning: Removed 18 rows containing missing values (geom_path).
+
+Warning: Removed 21 rows containing missing values (geom_point).</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-9-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#save_plot(&quot;/Users/laurenblake/Dropbox/Lauren Blake/Figures/WBC_versus_BMI.png&quot;, weight_over_time,
+#          base_aspect_ratio = 1)
+
+# WBC versus age
+weight_over_time &lt;- ggplot(ind_only[1:144,], aes(ind_only$age[1:144], ind_only$WBC[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = &quot;dashed&quot;, aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position=&quot;none&quot;) + xlab(&quot;Age (years)&quot;) + ylab(&quot;WBC count&quot;) + ggtitle(&quot;WBC count versus age&quot;)
+
+plot_grid(weight_over_time)</code></pre>
+<pre><code>Warning: Removed 20 rows containing missing values (geom_path).</code></pre>
+<pre><code>Warning: Removed 22 rows containing missing values (geom_point).</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-9-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#save_plot(&quot;/Users/laurenblake/Dropbox/Lauren Blake/Figures/WBC_versus_age.png&quot;, weight_over_time,
+#          base_aspect_ratio = 1)</code></pre>
+</div>
+<div id="how-do-labs-change-over-time-with-changes-in-bmi-with-age-1" class="section level1">
+<h1>How do labs change over time? With changes in BMI? With age?</h1>
+<pre class="r"><code># ESR versus time
+weight_over_time &lt;- ggplot(ind_only[1:144,], aes(ind_only$Time_from_admission[1:144], ind_only$ESR[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = &quot;dashed&quot;, aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position=&quot;none&quot;) + xlab(&quot;Days from admission to blood draw&quot;) + ylab(&quot;ESR&quot;) + ggtitle(&quot;ESR changes over time&quot;)
+
+plot_grid(weight_over_time)</code></pre>
+<pre><code>Warning: Removed 22 rows containing missing values (geom_path).</code></pre>
+<pre><code>Warning: Removed 23 rows containing missing values (geom_point).</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#save_plot(&quot;/Users/laurenblake/Dropbox/Lauren Blake/Figures/ESR_over_time_normalized.png&quot;, weight_over_time,
+#          base_aspect_ratio = 1)
+
+# ESR versus BMI
+weight_over_time &lt;- ggplot(ind_only[1:144,], aes(ind_only$bmi[1:144], ind_only$ESR[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = &quot;dashed&quot;, aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position=&quot;none&quot;) + xlab(&quot;BMI&quot;) + ylab(&quot;ESR&quot;) + ggtitle(&quot;ESR versus BMI&quot;)
+
+plot_grid(weight_over_time)</code></pre>
+<pre><code>Warning: Removed 21 rows containing missing values (geom_path).
+
+Warning: Removed 23 rows containing missing values (geom_point).</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-10-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#save_plot(&quot;/Users/laurenblake/Dropbox/Lauren Blake/Figures/ESR_versus_BMI.png&quot;, weight_over_time,
+#          base_aspect_ratio = 1)
+
+# ESR versus age
+weight_over_time &lt;- ggplot(ind_only[1:144,], aes(ind_only$age[1:144], ind_only$WBC[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = &quot;dashed&quot;, aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position=&quot;none&quot;) + xlab(&quot;Age (years)&quot;) + ylab(&quot;ESR&quot;) + ggtitle(&quot;ESR count versus age&quot;)
+
+plot_grid(weight_over_time)</code></pre>
+<pre><code>Warning: Removed 20 rows containing missing values (geom_path).</code></pre>
+<pre><code>Warning: Removed 22 rows containing missing values (geom_point).</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-10-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#save_plot(&quot;/Users/laurenblake/Dropbox/Lauren Blake/Figures/ESR_versus_age.png&quot;, weight_over_time,
+#          base_aspect_ratio = 1)</code></pre>
+</div>
+<div id="labs-over-time" class="section level1">
+<h1>Labs over time</h1>
+<pre class="r"><code>weight_over_time &lt;- ggplot(ind_only[1:144,], aes(as.factor(ind_only$Time[1:144]), ind_only$WBC[1:144])) + 
+geom_boxplot() + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position=&quot;none&quot;) + xlab(&quot;Time&quot;) + ylab(&quot;WBC count&quot;) + ggtitle(&quot;WBC changes over time&quot;)
+
+plot_grid(weight_over_time)</code></pre>
+<pre><code>Warning: Removed 21 rows containing non-finite values (stat_boxplot).</code></pre>
+<pre><code>Warning: Removed 21 rows containing missing values (geom_point).</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#save_plot(&quot;/Users/laurenblake/Dropbox/Lauren Blake/Figures/WBC_over_time.png&quot;, weight_over_time,
+#          base_aspect_ratio = 1)
+
+
+
+weight_over_time &lt;- ggplot(ind_only[1:144,], aes(as.factor(ind_only$Time[1:144]), ind_only[1:144,12])) + 
+geom_boxplot() + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position=&quot;none&quot;) + xlab(&quot;Time&quot;) + ylab(&quot;RBC count&quot;) + ggtitle(&quot;RBC changes over time&quot;)
+
+plot_grid(weight_over_time)</code></pre>
+<pre><code>Warning: Removed 21 rows containing non-finite values (stat_boxplot).
+
+Warning: Removed 21 rows containing missing values (geom_point).</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-11-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#save_plot(&quot;/Users/laurenblake/Dropbox/Lauren Blake/Figures/RBC_over_time.png&quot;, weight_over_time,
+#          base_aspect_ratio = 1)
+
+
+weight_over_time &lt;- ggplot(ind_only[1:144,], aes(as.factor(ind_only$Time[1:144]), ind_only[1:144,13])) + 
+geom_boxplot() + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position=&quot;none&quot;) + xlab(&quot;Time&quot;) + ylab(&quot;RBC count&quot;) + ggtitle(&quot;RBC changes over time&quot;)
+
+plot_grid(weight_over_time)</code></pre>
+<pre><code>Warning: Removed 21 rows containing non-finite values (stat_boxplot).
+
+Warning: Removed 21 rows containing missing values (geom_point).</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-11-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#save_plot(&quot;/Users/laurenblake/Dropbox/Lauren Blake/Figures/RBC_over_time.png&quot;, weight_over_time,
+#          base_aspect_ratio = 1)
+
+
+# define a function to remove outliers
+#FindOutliers &lt;- function(data) {
+#  lowerq = quantile(data)[2]
+#  upperq = quantile(data)[4]
+#  iqr = upperq - lowerq #Or use IQR(data)
+  # we identify extreme outliers
+#  extreme.threshold.upper = (iqr * 3) + upperq
+#  extreme.threshold.lower = lowerq - (iqr * 3)
+#  result &lt;- which(data &gt; extreme.threshold.upper | data &lt; extreme.threshold.lower)
+# }
+
+# use the function to identify outliers
+
+#no_outliers &lt;- check_cor_labs[which(complete.cases(check_cor_labs) == TRUE),]
+
+#for (i in 1:ncol(no_outliers)){
+#temp &lt;- FindOutliers(no_outliers[,i])
+#print(i)
+#print(temp)
+#}
+
+weight_over_time &lt;- ggplot(ind_only[1:144,], aes(as.factor(ind_only$Time[1:144]), ind_only$AST[1:144])) + 
+geom_boxplot() + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position=&quot;none&quot;) + xlab(&quot;Time&quot;) + ylab(&quot;AST&quot;) + ggtitle(&quot;Aspartate aminotransferase&quot;)
+
+plot_grid(weight_over_time)</code></pre>
+<pre><code>Warning: Removed 13 rows containing non-finite values (stat_boxplot).</code></pre>
+<pre><code>Warning: Removed 13 rows containing missing values (geom_point).</code></pre>
+<p><img src="figure/correlations_over_time.Rmd/unnamed-chunk-11-4.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#save_plot(&quot;/Users/laurenblake/Dropbox/Lauren Blake/Figures/AST_over_time.png&quot;, weight_over_time,
+#          base_aspect_ratio = 1)</code></pre>
+<div id="session-information" class="section level2">
+<h2>Session information</h2>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 3.4.3 (2017-11-30)
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+Running under: OS X El Capitan 10.11.6
+
+Matrix products: default
+BLAS: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] gplots_3.0.1  cowplot_0.9.3 ggplot2_3.0.0
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_0.12.18       compiler_3.4.3     pillar_1.3.0      
+ [4] git2r_0.23.0       plyr_1.8.4         workflowr_1.1.1   
+ [7] bindr_0.1.1        bitops_1.0-6       R.methodsS3_1.7.1 
+[10] R.utils_2.6.0      tools_3.4.3        digest_0.6.16     
+[13] evaluate_0.11      tibble_1.4.2       gtable_0.2.0      
+[16] pkgconfig_2.0.2    rlang_0.2.2        yaml_2.2.0        
+[19] bindrcpp_0.2.2     withr_2.1.2        stringr_1.3.1     
+[22] dplyr_0.7.6        knitr_1.20         caTools_1.17.1.1  
+[25] gtools_3.8.1       rprojroot_1.3-2    grid_3.4.3        
+[28] tidyselect_0.2.4   glue_1.3.0         R6_2.2.2          
+[31] rmarkdown_1.10     gdata_2.18.0       purrr_0.2.5       
+[34] magrittr_1.5       whisker_0.3-2      backports_1.1.2   
+[37] scales_1.0.0       htmltools_0.3.6    assertthat_0.2.0  
+[40] colorspace_1.3-2   labeling_0.3       KernSmooth_2.23-15
+[43] stringi_1.2.4      lazyeval_0.2.1     munsell_0.5.0     
+[46] crayon_1.3.4       R.oo_1.22.0       </code></pre>
+</div>
+</div>
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+<hr>
+<p>
+    
+</p>
+<hr>
+
+<!-- To enable disqus, uncomment the section below and provide your disqus_shortname -->
+
+<!-- disqus
+  <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'rmarkdown'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+-->
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+<hr>
+<p>
+  This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a>
+  analysis was created with
+  <a href="https://github.com/jdblischak/workflowr">workflowr</a> 1.1.1
+</p>
+<hr>
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,366 @@
+---
+title: "Correlations over time"
+author: "Lauren Blake"
+date: 2018-07-18
+output: workflowr::wflow_html
+editor_options: 
+  chunk_output_type: console
+---
+
+
+
+
+# Introduction
+
+The goal of this script is to look for correlations between clinical variables. 
+
+```{r}
+# Load library for plotting
+library(cowplot)
+library(ggplot2)
+library(gplots)
+
+# Load data
+ind_only <- read.csv("/Users/laurenblake/Dropbox/Lauren Blake/RNA_seq_project/clinical_sample_info.csv")
+str(ind_only)
+dim(ind_only)
+
+summary(ind_only)
+```
+
+# Weight over time
+
+```{r}
+weight_over_time <- ggplot(ind_only[1:144,], aes(as.factor(ind_only$time[1:144]), ind_only$Weight[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = "dashed", aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position="none") + xlab("Time") + ylab("Weight (pounds)") + ggtitle("Weight changes over time")
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/weight_over_time.png", weight_over_time,
+#          base_aspect_ratio = 1)
+```
+
+# Weight over time (boxplot)
+
+```{r}
+weight_over_time <- ggplot(ind_only, aes(as.factor(ind_only$Time), ind_only$Weight)) + geom_boxplot(aes(color = as.factor(ind_only$Time)), outlier.shape = NA) + geom_jitter(aes(as.factor(ind_only$Time), ind_only$Weight), size = 0.5, width = 0.1) + theme(legend.position="none") + xlab("Timepoint") + ylab("Weight (lbs)") 
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/Weight_over_time_boxplot.png", weight_over_time,
+#          base_aspect_ratio = 1)
+```
+
+
+# BMI over time (boxplot)
+
+```{r}
+weight_over_time <- ggplot(ind_only, aes(as.factor(ind_only$Time), ind_only$bmi)) + geom_boxplot(aes(color = as.factor(ind_only$Time)), outlier.shape = NA) + geom_jitter(aes(as.factor(ind_only$Time), ind_only$bmi), size = 0.5, width = 0.1) + theme(legend.position="none") + xlab("Timepoint") + ylab("BMI") 
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/BMI_over_time_boxplot.png", weight_over_time,
+#          base_aspect_ratio = 1)
+```
+
+
+# Weight over days (rather than T1, T2, etc.)
+
+```{r}
+weight_over_time <- ggplot(ind_only[1:144,], aes(ind_only$Time_from_admission[1:144], ind_only$Weight[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = "dashed", aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position="none") + xlab("Days from admission to blood draw") + ylab("Weight (pounds)") + ggtitle("Weight changes over time")
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/weight_over_time_normalized.png", weight_over_time,
+#          base_aspect_ratio = 1)
+```
+
+# Weight over days (rather than T1, T2, etc.)
+
+```{r}
+weight_over_time <- ggplot(ind_only[1:144,], aes(ind_only$Time_from_admission[1:144], ind_only$Weight[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = "dashed") + geom_point(aes(color = as.factor(ind_only$current_ED[1:144]))) + xlab("Days from admission to blood draw") + ylab("Weight (pounds)") + ggtitle("Weight changes over time")  + labs(color='Eating disorder status') 
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/weight_over_time_by_recovery_status.png", weight_over_time,
+#          base_aspect_ratio = 1)
+```
+
+# Look at all correlations for numeric variables
+
+```{r}
+# Eliminate factors
+check_cor <- ind_only[,-1]
+check_cor <- check_cor[,1:(ncol(check_cor)-6)]
+
+# Obtain correlations and pvalues
+
+pvalues <- matrix(data = NA, nrow = ncol(check_cor), ncol = ncol(check_cor))
+colnames(pvalues) <- colnames(check_cor)
+rownames(pvalues) <- colnames(check_cor)
+correlations <- matrix(data = NA, nrow = ncol(check_cor), ncol = ncol(check_cor))
+colnames(correlations) <- colnames(check_cor)
+rownames(correlations) <- colnames(check_cor)
+
+j=1
+for (j in 1:ncol(check_cor)){
+  
+  for (i in 1:ncol(check_cor)){
+      
+  test <- cor.test(as.numeric(check_cor[,j]), as.numeric(check_cor[,i]), method = "pearson")
+      
+  #Get the correlation
+  
+  test$estimate
+  
+  #Get the p-value 
+  test$p.value
+
+  pvalues[j, i] <- test$p.value
+  correlations[j, i] <- test$estimate
+  
+  i = i+1
+  }
+  j=j+1
+}
+
+#correlations
+#pvalues
+
+#Find which variables are p-value < 0.05
+pvalues <=0.05
+```
+
+# How highly correlated are the lab measurements?
+
+```{r}
+# Pull lab values
+lab_values <- c(11:46, 50:53)
+check_cor_labs <- ind_only[,lab_values]
+
+# Obtain correlations and pvalues
+
+pvalues <- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(pvalues) <- colnames(check_cor_labs)
+rownames(pvalues) <- colnames(check_cor_labs)
+correlations <- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(correlations) <- colnames(check_cor_labs)
+rownames(correlations) <- colnames(check_cor_labs)
+
+j=1
+for (j in 1:ncol(check_cor_labs)){
+  
+  for (i in 1:ncol(check_cor_labs)){
+      
+  test <- cor.test(as.numeric(check_cor_labs[,j]), as.numeric(check_cor_labs[,i]), method = "pearson")
+      
+  #Get the correlation
+  
+  test$estimate
+  
+  #Get the p-value 
+  test$p.value
+
+  pvalues[j, i] <- test$p.value
+  correlations[j, i] <- test$estimate
+  
+  i = i+1
+  }
+  j=j+1
+}
+
+#correlations
+#pvalues
+
+#Find which variables are p-value < 0.05
+pvalues <=0.05
+
+# need data as matrix
+mm <- as.matrix(correlations, ncol = ncol(correlations))
+
+heatmap.2(x = mm, Rowv = FALSE, Colv = FALSE, dendrogram = "none",
+         notecex = 2,
+          trace = "none", key = TRUE)
+
+
+
+
+# Run on just the
+
+lab_values <- c(7, 11:46, 50:53)
+check_cor_labs <- ind_only[,lab_values]
+lab_values_1 <- check_cor_labs[which(check_cor_labs$time == 1),2:40]
+lab_values_2 <- check_cor_labs[which(check_cor_labs$time == 2),2:40]
+lab_values_3 <- check_cor_labs[which(check_cor_labs$time == 3),2:40]
+
+check_cor_labs <- lab_values_1
+
+
+pvalues <- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(pvalues) <- colnames(check_cor_labs)
+rownames(pvalues) <- colnames(check_cor_labs)
+correlations <- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(correlations) <- colnames(check_cor_labs)
+rownames(correlations) <- colnames(check_cor_labs)
+
+j=1
+for (j in 1:ncol(check_cor_labs)){
+  
+  for (i in 1:ncol(check_cor_labs)){
+      
+  test <- cor.test(as.numeric(check_cor_labs[,j]), as.numeric(check_cor_labs[,i]), method = "pearson")
+      
+  #Get the correlation
+  
+  test$estimate
+  
+  #Get the p-value 
+  test$p.value
+
+  pvalues[j, i] <- test$p.value
+  correlations[j, i] <- test$estimate
+  
+  i = i+1
+  }
+  j=j+1
+}
+
+#correlations
+#pvalues
+
+#Find which variables are p-value < 0.05
+pvalues <=0.05
+
+# need data as matrix
+mm <- as.matrix(correlations, ncol = ncol(correlations))
+
+
+heatmap.2(x = mm, Rowv = FALSE, Colv = FALSE, dendrogram = "none",
+         notecex = 2,
+          trace = "none", key = TRUE)
+```
+
+
+
+# How do labs change over time? With changes in BMI? With age?
+
+```{r}
+# WBC versus time
+weight_over_time <- ggplot(ind_only[1:144,], aes(ind_only$Time_from_admission[1:144], ind_only$WBC[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = "dashed", aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position="none") + xlab("Days from admission to blood draw") + ylab("WBC count") + ggtitle("WBC changes over time")
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/WBC_over_time_normalized.png", weight_over_time,
+#          base_aspect_ratio = 1)
+
+
+
+# WBC versus BMI
+weight_over_time <- ggplot(ind_only[1:144,], aes(ind_only$bmi[1:144], ind_only$WBC[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = "dashed", aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position="none") + xlab("BMI") + ylab("WBC count") + ggtitle("WBC count versus BMI")
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/WBC_versus_BMI.png", weight_over_time,
+#          base_aspect_ratio = 1)
+
+# WBC versus age
+weight_over_time <- ggplot(ind_only[1:144,], aes(ind_only$age[1:144], ind_only$WBC[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = "dashed", aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position="none") + xlab("Age (years)") + ylab("WBC count") + ggtitle("WBC count versus age")
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/WBC_versus_age.png", weight_over_time,
+#          base_aspect_ratio = 1)
+```
+
+# How do labs change over time? With changes in BMI? With age?
+
+```{r}
+# ESR versus time
+weight_over_time <- ggplot(ind_only[1:144,], aes(ind_only$Time_from_admission[1:144], ind_only$ESR[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = "dashed", aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position="none") + xlab("Days from admission to blood draw") + ylab("ESR") + ggtitle("ESR changes over time")
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/ESR_over_time_normalized.png", weight_over_time,
+#          base_aspect_ratio = 1)
+
+# ESR versus BMI
+weight_over_time <- ggplot(ind_only[1:144,], aes(ind_only$bmi[1:144], ind_only$ESR[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = "dashed", aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position="none") + xlab("BMI") + ylab("ESR") + ggtitle("ESR versus BMI")
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/ESR_versus_BMI.png", weight_over_time,
+#          base_aspect_ratio = 1)
+
+# ESR versus age
+weight_over_time <- ggplot(ind_only[1:144,], aes(ind_only$age[1:144], ind_only$WBC[1:144], group = ind_only$BAN_ID[1:144])) + geom_line(linetype = "dashed", aes(color = as.factor(ind_only$BAN_ID[1:144]))) + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position="none") + xlab("Age (years)") + ylab("ESR") + ggtitle("ESR count versus age")
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/ESR_versus_age.png", weight_over_time,
+#          base_aspect_ratio = 1)
+```
+
+# Labs over time
+
+```{r}
+weight_over_time <- ggplot(ind_only[1:144,], aes(as.factor(ind_only$Time[1:144]), ind_only$WBC[1:144])) + 
+geom_boxplot() + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position="none") + xlab("Time") + ylab("WBC count") + ggtitle("WBC changes over time")
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/WBC_over_time.png", weight_over_time,
+#          base_aspect_ratio = 1)
+
+
+
+weight_over_time <- ggplot(ind_only[1:144,], aes(as.factor(ind_only$Time[1:144]), ind_only[1:144,12])) + 
+geom_boxplot() + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position="none") + xlab("Time") + ylab("RBC count") + ggtitle("RBC changes over time")
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/RBC_over_time.png", weight_over_time,
+#          base_aspect_ratio = 1)
+
+
+weight_over_time <- ggplot(ind_only[1:144,], aes(as.factor(ind_only$Time[1:144]), ind_only[1:144,13])) + 
+geom_boxplot() + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position="none") + xlab("Time") + ylab("RBC count") + ggtitle("RBC changes over time")
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/RBC_over_time.png", weight_over_time,
+#          base_aspect_ratio = 1)
+
+
+# define a function to remove outliers
+#FindOutliers <- function(data) {
+#  lowerq = quantile(data)[2]
+#  upperq = quantile(data)[4]
+#  iqr = upperq - lowerq #Or use IQR(data)
+  # we identify extreme outliers
+#  extreme.threshold.upper = (iqr * 3) + upperq
+#  extreme.threshold.lower = lowerq - (iqr * 3)
+#  result <- which(data > extreme.threshold.upper | data < extreme.threshold.lower)
+# }
+
+# use the function to identify outliers
+
+#no_outliers <- check_cor_labs[which(complete.cases(check_cor_labs) == TRUE),]
+
+#for (i in 1:ncol(no_outliers)){
+#temp <- FindOutliers(no_outliers[,i])
+#print(i)
+#print(temp)
+#}
+
+weight_over_time <- ggplot(ind_only[1:144,], aes(as.factor(ind_only$Time[1:144]), ind_only$AST[1:144])) + 
+geom_boxplot() + geom_point(aes(color = as.factor(ind_only$BAN_ID[1:144]))) + theme(legend.position="none") + xlab("Time") + ylab("AST") + ggtitle("Aspartate aminotransferase")
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/AST_over_time.png", weight_over_time,
+#          base_aspect_ratio = 1)
+
+```
+
+
+
+

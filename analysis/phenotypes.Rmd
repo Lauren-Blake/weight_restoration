@@ -1,0 +1,190 @@
+---
+title: "phenotypes"
+author: "Lauren Blake"
+date: "2018-09-11"
+output: workflowr::wflow_html
+---
+
+# Introduction
+
+```{r}
+normalized_gene_exp <- read.csv("../data/gene_expression_filtered_pcs_T1T3.csv")
+
+# Read in the clinical covariates
+
+clinical_sample_info <- read.csv("../data/lm_covar_fixed_random.csv")
+dim(clinical_sample_info)
+
+# Subset to T1-T3
+
+clinical_sample <- clinical_sample_info[1:144,(-12)]
+
+dim(clinical_sample)
+```
+
+# Correlation between time and gene expression
+
+```{r}
+summary(lm(normalized_gene_exp$PC1 ~ as.factor(clinical_sample$Time)))
+summary(lm(normalized_gene_exp$PC2 ~ as.factor(clinical_sample$Time)))
+summary(lm(normalized_gene_exp$pc3 ~ as.factor(clinical_sample$Time)))
+summary(lm(normalized_gene_exp$pc4 ~ as.factor(clinical_sample$Time)))
+summary(lm(normalized_gene_exp$pc5 ~ as.factor(clinical_sample$Time)))
+
+summary(aov(normalized_gene_exp$PC1~ as.factor(clinical_sample$Time)))
+
+summary(aov(normalized_gene_exp$PC2~ as.factor(clinical_sample$Time)))
+
+summary(aov(normalized_gene_exp$pc3~ as.factor(clinical_sample$Time)))
+
+summary(aov(normalized_gene_exp$pc4~ as.factor(clinical_sample$Time)))
+
+summary(aov(normalized_gene_exp$pc5~ as.factor(clinical_sample$Time)))
+```
+
+# Individual and PCs
+
+```{r}
+summary(aov(normalized_gene_exp$PC1~ as.factor(clinical_sample$Individual)))
+
+summary(aov(normalized_gene_exp$PC2~ as.factor(clinical_sample$Individual)))
+
+summary(aov(normalized_gene_exp$pc3~ as.factor(clinical_sample$Individual)))
+```
+
+# What's correlated with PC1?
+
+```{r}
+# Age-no
+summary(lm(normalized_gene_exp$PC1 ~ clinical_sample$Age))
+
+# BE-no
+
+summary(aov(normalized_gene_exp$PC1~ as.factor(clinical_sample$BE_GROUP)))
+
+# Psych meds- yes
+
+summary(aov(normalized_gene_exp$PC1~ as.factor(clinical_sample$psychmeds)))
+
+# RBC-yes
+
+summary(lm(normalized_gene_exp$PC1 ~ clinical_sample$RBC))
+
+
+# AE
+
+summary(lm(normalized_gene_exp$PC1 ~ clinical_sample$AE))
+
+
+# Race
+
+summary(lm(normalized_gene_exp$PC1~ as.factor(clinical_sample$Race)))
+
+
+# AL- no
+
+summary(lm(normalized_gene_exp$PC1 ~ clinical_sample$AL))
+
+# AN- no
+
+summary(lm(normalized_gene_exp$PC1 ~ clinical_sample$AN))
+
+
+# RIN- no
+
+summary(lm(normalized_gene_exp$PC1 ~ clinical_sample$RIN))
+
+
+```
+
+
+# Correlation between time and other variables
+
+```{r}
+# Individual-no
+
+chisq.test(as.factor(clinical_sample$Individual), as.factor(clinical_sample$Time), simulate.p.value = TRUE)$p.value
+
+# Age-no
+summary(lm(clinical_sample$Age ~ as.factor(clinical_sample$Time)))
+
+# BE-no
+
+chisq.test(as.factor(clinical_sample$BE_GROUP), as.factor(clinical_sample$Time), simulate.p.value = TRUE)$p.value
+
+# Psych meds- yes
+
+chisq.test(as.factor(clinical_sample$psychmeds), as.factor(clinical_sample$Time), simulate.p.value = TRUE)$p.value
+
+# RBC-yes
+
+summary(lm(clinical_sample$RBC ~ as.factor(clinical_sample$Time)))
+
+# AE
+
+summary(lm(clinical_sample$AE ~ as.factor(clinical_sample$Time)))
+
+# Race
+
+chisq.test(as.factor(clinical_sample$Race), as.factor(clinical_sample$Time), simulate.p.value = TRUE)$p.value
+
+# AL- no
+
+summary(lm(clinical_sample$AL ~ as.factor(clinical_sample$Time)))
+
+# AN- no
+
+summary(lm(clinical_sample$AN ~ as.factor(clinical_sample$Time)))
+
+# RIN- no
+
+summary(lm(clinical_sample$RIN ~ as.factor(clinical_sample$Time)))
+
+pval_time <- c(1, 0.7737,  0.3438281, 0.001999,  0.00617, 0.05586, 1,  0.6813,  0.05711, 0.05629)
+
+p.adjust(pval_time, method = "fdr", n = length(pval_time))
+```
+
+# Correlation between individual and other variables
+```{r}
+# Age
+summary(aov(clinical_sample$Age ~ as.factor(clinical_sample$Individual)))
+
+# BE
+
+chisq.test(as.factor(clinical_sample$BE_GROUP), as.factor(clinical_sample$Individual), simulate.p.value = TRUE)$p.value
+
+# Psych meds
+
+chisq.test(as.factor(clinical_sample$psychmeds), as.factor(clinical_sample$Individual), simulate.p.value = TRUE)$p.value
+
+# RBC
+
+summary(lm(clinical_sample$RBC ~ as.factor(clinical_sample$Individual)))
+
+# AE
+
+summary(lm(clinical_sample$AE ~ as.factor(clinical_sample$Individual)))
+
+# Race
+
+chisq.test(as.factor(clinical_sample$Race), as.factor(clinical_sample$Individual), simulate.p.value = TRUE)$p.value
+
+# AL
+
+summary(lm(clinical_sample$AL ~ as.factor(clinical_sample$Individual)))
+
+# AN
+
+summary(lm(clinical_sample$AN ~ as.factor(clinical_sample$Individual)))
+
+# RIN- no
+
+summary(lm(clinical_sample$RIN ~ as.factor(clinical_sample$Individual)))
+
+pval_time <- c(0.0000000000000022, 0.02898551, 0.002498751, 0.0000003245, 0.183, 0.0004997501, 0.0000000000000022, 0.0001433, 0.4309)
+
+p.adjust(pval_time, method = "fdr", n = length(pval_time))
+
+```
+

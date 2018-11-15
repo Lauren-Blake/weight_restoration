@@ -1,0 +1,585 @@
+---
+title: "Info_by_timepoint"
+author: "Lauren Blake"
+date: "July 23, 2018"
+output: workflowr::wflow_html
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+```{r cars}
+# Load library for plotting
+library(cowplot)
+library(ggplot2)
+library(gplots)
+
+# Load data
+ind_only <- read.csv("../data/clinical_sample_info.csv")
+str(ind_only)
+dim(ind_only)
+
+summary(ind_only)
+```
+
+# Individuals per timepoint
+
+
+```{r individuals per timepoint}
+# T1
+ind_only_t1 <- ind_only[which(ind_only$Time == 1),]
+
+dim(ind_only_t1)
+
+#T2
+ind_only_t2 <- ind_only[which(ind_only$Time == 2),]
+
+dim(ind_only_t2)
+
+#T3
+ind_only_t3 <- ind_only[which(ind_only$Time == 3),]
+
+dim(ind_only_t3)
+
+summary(as.factor(ind_only_t3$current_ED))
+
+#T4
+ind_only_t4 <- ind_only[which(ind_only$Time == 4),]
+
+dim(ind_only_t4)
+
+summary(as.factor(ind_only_t4$current_ED))
+
+#T5
+ind_only_t5 <- ind_only[which(ind_only$Time == 5),]
+
+dim(ind_only_t5)
+
+summary(as.factor(ind_only_t5$current_ED))
+```
+
+# Race/ethnicity at T1
+
+```{r}
+summary(as.factor(ind_only_t1$Race))
+summary(as.factor(ind_only_t1$Ethnicity))
+
+```
+
+# Admission characteristics
+
+```{r}
+no_time <- read.csv("../data/notimecovariates.csv")
+str(no_time)
+
+# Age of onset
+
+summary(no_time$age_onset)
+mean(no_time$age_onset[-47])
+sd(no_time$age_onset[-47])
+
+# Age
+
+summary(ind_only_t1$age)
+mean(ind_only_t1$age)
+sd(ind_only_t1$age)
+
+# Prior hospitalizations
+
+prev_hosp <- no_time[which(no_time$Previous_hospitalizations != "NA"),]
+
+summary(prev_hosp$Previous_hospitalizations)
+mean(prev_hosp$Previous_hospitalizations)
+sd(prev_hosp$Previous_hospitalizations)
+
+# Subtype
+
+summary(as.factor(no_time$AN_subtype))
+
+# Weight
+
+summary(ind_only_t1$Weight)
+mean(ind_only_t1$Weight)
+sd(ind_only_t1$Weight)
+
+# BMI
+
+summary(ind_only_t1$bmi)
+mean(ind_only_t1$bmi)
+sd(ind_only_t1$bmi)
+
+
+# EDU
+summary(no_time$EDU_days)
+mean(no_time$EDU_days)
+sd(no_time$EDU_days)
+
+# AMA
+summary(as.factor(no_time$AMA))
+
+# AMA versus EDU days
+
+summary(lm(no_time$EDU_days ~ as.factor(no_time$AMA)))
+
+# Weight over time
+
+summary(ind_only_t1$Weight)
+summary(ind_only_t2$Weight)
+summary(ind_only_t3$Weight)
+summary(ind_only_t4$Weight)
+summary(ind_only_t5$Weight)
+```
+
+# Change in BMI
+
+```{r}
+#T1 to T2
+
+summary(no_time$bmiT1T2)
+mean(no_time$bmiT1T2)
+sd(no_time$bmiT1T2)
+
+#T2 to T3
+
+time <- no_time[which(no_time$bmiT2T3 != "NA"),]
+
+summary(time$bmiT2T3)
+mean(time$bmiT2T3)
+sd(time$bmiT2T3)
+
+#T3 to T4
+
+time <- no_time[which(no_time$bmiT3T4 != "NA"),]
+
+summary(time$bmiT3T4)
+mean(time$bmiT3T4)
+sd(time$bmiT3T4)
+
+#T4 to T5
+
+time <- no_time[which(no_time$bmiT4T5 != "NA"),]
+
+summary(time$bmiT4T5)
+mean(time$bmiT4T5)
+sd(time$bmiT4T5)
+```
+
+# Correlation between days on unit and days between blood draws
+
+```{r}
+cor(no_time$EDU_days, no_time$blooddrawT1T2)
+```
+
+# Correlation between days on unit and bmiT1T2
+
+```{r}
+cor(no_time$EDU_days, no_time$bmiT1T2)
+```
+
+# Correlation between days between T1T2 blood draws and bmiT1T2
+
+```{r}
+cor(no_time$blooddrawT1T2, no_time$bmiT1T2)
+
+weight_over_time <- ggplot(no_time, aes(no_time$EDU_days, no_time$bmiT1T2)) + geom_point() + geom_smooth(method='lm',formula=y~x)  + theme(legend.position = "none") + xlab("EDU days") + ylab("Change in BMI (T1 to T2)") 
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/EDU_over_BMI_boxplot.png", weight_over_time,
+#          base_aspect_ratio = 1)
+
+weight_over_time <- ggplot(no_time, aes(no_time$EDU_days, no_time$bmiT1T2)) + geom_point()   + theme(legend.position = "none") + xlab("EDU days") + ylab("Change in BMI (T1 to T2)") 
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/EDU_over_BMI_boxplot_no_line.png", weight_over_time,
+#          base_aspect_ratio = 1)
+
+
+# AMA status
+weight_over_time <- ggplot(no_time, aes(as.factor(no_time$AMA), no_time$bmiT1T2)) + geom_boxplot(outlier.shape = NA) + geom_jitter(aes(color = as.factor(no_time$AMA)), width = 0.1) + xlab("AMA") + ylab("Change in BMI (T1 to T2)") + theme(legend.position = "none") + scale_x_discrete(breaks=c("0","1"),
+        labels=c("No", "Yes"))
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/AMA_BMI_T1T2boxplot.png", weight_over_time,
+#          base_aspect_ratio = 1)
+
+
+summary(lm(no_time$bmiT1T2 ~ as.factor(no_time$AMA)))
+
+weight_over_time <- ggplot(no_time, aes(as.factor(no_time$AMA), no_time$bmiT2T3)) + geom_boxplot(outlier.shape = NA) + geom_jitter(aes(color = as.factor(no_time$AMA)), width = 0.1) + xlab("AMA") + ylab("Change in BMI (T2 to T3)") + theme(legend.position = "none") + scale_x_discrete(breaks=c("0","1"),
+        labels=c("No", "Yes"))
+
+plot_grid(weight_over_time)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/AMA_BMI_T2T3boxplot.png", weight_over_time,
+#          base_aspect_ratio = 1)
+
+summary(lm(no_time$bmiT2T3 ~ as.factor(no_time$AMA)))
+
+
+
+```
+
+# Correlation between lab results
+
+```{r}
+ind_only_values <- c(12, 13, 21, 22, 23, 24, 25, 51)
+
+ind_only_labs <- ind_only[,ind_only_values]
+
+ind_only_labs <- as.data.frame(ind_only_labs)
+  
+# All labs together
+
+  # Platelet 
+
+cor(ind_only_labs$Platelet, ind_only_labs$RBC, use = "pairwise.complete.obs")
+
+cor(ind_only_labs$Platelet, ind_only_labs$AN, use = "pairwise.complete.obs")
+
+cor(ind_only_labs$Platelet, ind_only_labs$AL, use =  "pairwise.complete.obs")
+
+cor(ind_only_labs$Platelet, ind_only_labs$AE, use = "pairwise.complete.obs")
+
+  # RBC
+
+cor(ind_only_labs$RBC, ind_only_labs$AN, use = "pairwise.complete.obs")
+
+cor(ind_only_labs$RBC, ind_only_labs$AL, use = "pairwise.complete.obs")
+
+cor(ind_only_labs$RBC, ind_only_labs$AE, use =  "pairwise.complete.obs")
+
+  # AN
+
+cor(ind_only_labs$AN, ind_only_labs$AL, use =  "pairwise.complete.obs")
+
+cor(ind_only_labs$AN, ind_only_labs$AE, use =  "pairwise.complete.obs")
+
+  # AL
+
+cor(ind_only_labs$AL, ind_only_labs$AE, use =  "pairwise.complete.obs")
+
+
+
+check_cor_labs <- ind_only_labs
+
+
+pvalues <- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(pvalues) <- colnames(check_cor_labs)
+rownames(pvalues) <- colnames(check_cor_labs)
+correlations <- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(correlations) <- colnames(check_cor_labs)
+rownames(correlations) <- colnames(check_cor_labs)
+
+j=1
+for (j in 1:ncol(check_cor_labs)){
+  
+  for (i in 1:ncol(check_cor_labs)){
+      
+  test <- cor.test(as.numeric(check_cor_labs[,j]), as.numeric(check_cor_labs[,i]), method = "pearson")
+      
+  #Get the correlation
+  
+  test$estimate
+  
+  #Get the p-value 
+  test$p.value
+
+  pvalues[j, i] <- test$p.value
+  correlations[j, i] <- test$estimate
+  
+  i = i+1
+  }
+  j=j+1
+}
+
+#correlations
+#pvalues
+
+#Find which variables are p-value < 0.05
+pvalues <=0.05
+
+#Find which correlations are < 
+
+which(abs(correlations) > 0.5)
+
+# need data as matrix
+mm <- as.matrix(correlations, ncol = ncol(correlations))
+
+#png("/Users/laurenblake/Dropbox/Lauren Blake/Figures/5_values_all_times.png",
+#  width = 5*300,        # 5 x 300 pixels
+#  height = 5*300,
+#  res = 300,            # 300 pixels per inch
+#  pointsize = 8)  
+
+heatmap.2(x = mm, Rowv = FALSE, Colv = FALSE, dendrogram = "none", main = "Correlations between \n lab values, all time points", notecex = 2, trace = "none", key = TRUE, margins = c(12,8))
+
+dev.off()
+```
+
+# Separate and look at the correlations bet. lab values at each point
+
+```{r}
+# Time point 1
+
+ind_only_values <- c(2,3,12, 13, 21, 22, 23, 24, 25, 51)
+
+ind_only_labs <- ind_only[,ind_only_values]
+
+check_cor_labs <- ind_only_labs[which(ind_only_labs$Time == 1), -1]
+
+check_cor_labs <- check_cor_labs[,-1]
+
+pvalues <- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(pvalues) <- colnames(check_cor_labs)
+rownames(pvalues) <- colnames(check_cor_labs)
+correlations <- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(correlations) <- colnames(check_cor_labs)
+rownames(correlations) <- colnames(check_cor_labs)
+
+j=1
+for (j in 1:ncol(check_cor_labs)){
+  
+  for (i in 1:ncol(check_cor_labs)){
+      
+  test <- cor.test(as.numeric(check_cor_labs[,j]), as.numeric(check_cor_labs[,i]), method = "pearson")
+      
+  #Get the correlation
+  
+  test$estimate
+  
+  #Get the p-value 
+  test$p.value
+
+  pvalues[j, i] <- test$p.value
+  correlations[j, i] <- test$estimate
+  
+  i = i+1
+  }
+  j=j+1
+}
+
+#correlations
+#pvalues
+
+#Find which variables are p-value < 0.05
+pvalues <=0.05
+
+# need data as matrix
+mm <- as.matrix(correlations, ncol = ncol(correlations))
+
+#png("/Users/laurenblake/Dropbox/Lauren Blake/Figures/5_values_T1.png",
+#  width = 5*300,        # 5 x 300 pixels
+#  height = 5*300,
+#  res = 300,            # 300 pixels per inch
+#  pointsize = 8)  
+
+heatmap.2(x = mm, Rowv = FALSE, Colv = FALSE, dendrogram = "none", main = "Correlations between \n lab values, T1", notecex = 2, trace = "none", key = TRUE, margins = c(12,8))
+
+dev.off()
+
+
+
+
+# Time point 2
+
+ind_only_values <- c(2, 3, 12, 13, 21, 22, 23, 24, 25, 51)
+
+ind_only_labs <- ind_only[,ind_only_values]
+
+check_cor_labs <- ind_only_labs[which(ind_only_labs$Time == 2), -1]
+
+check_cor_labs <- check_cor_labs[,-1]
+
+pvalues <- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(pvalues) <- colnames(check_cor_labs)
+rownames(pvalues) <- colnames(check_cor_labs)
+correlations <- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(correlations) <- colnames(check_cor_labs)
+rownames(correlations) <- colnames(check_cor_labs)
+
+j=1
+for (j in 1:ncol(check_cor_labs)){
+  
+  for (i in 1:ncol(check_cor_labs)){
+      
+  test <- cor.test(as.numeric(check_cor_labs[,j]), as.numeric(check_cor_labs[,i]), method = "pearson")
+      
+  #Get the correlation
+  
+  test$estimate
+  
+  #Get the p-value 
+  test$p.value
+
+  pvalues[j, i] <- test$p.value
+  correlations[j, i] <- test$estimate
+  
+  i = i+1
+  }
+  j=j+1
+}
+
+#correlations
+#pvalues
+
+#Find which variables are p-value < 0.05
+pvalues <=0.05
+
+# need data as matrix
+mm <- as.matrix(correlations, ncol = ncol(correlations))
+
+#png("/Users/laurenblake/Dropbox/Lauren Blake/Figures/5_values_T2.png",
+#  width = 5*300,        # 5 x 300 pixels
+#  height = 5*300,
+#  res = 300,            # 300 pixels per inch
+#  pointsize = 8)  
+
+heatmap.2(x = mm, Rowv = FALSE, Colv = FALSE, dendrogram = "none", main = "Correlations between \n lab values, T2", notecex = 2, trace = "none", key = TRUE, margins = c(12,8))
+
+dev.off()
+
+
+# Time point 3
+
+ind_only_values <- c(2, 3, 12, 20, 21, 22, 23, 24, 51)
+
+ind_only_labs <- ind_only[,ind_only_values]
+
+check_cor_labs <- ind_only_labs[which(ind_only_labs$Time == 3), -1]
+
+check_cor_labs <- check_cor_labs[,-1]
+
+pvalues <- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(pvalues) <- colnames(check_cor_labs)
+rownames(pvalues) <- colnames(check_cor_labs)
+correlations <- matrix(data = NA, nrow = ncol(check_cor_labs), ncol = ncol(check_cor_labs))
+colnames(correlations) <- colnames(check_cor_labs)
+rownames(correlations) <- colnames(check_cor_labs)
+
+j=1
+for (j in 1:ncol(check_cor_labs)){
+  
+  for (i in 1:ncol(check_cor_labs)){
+      
+  test <- cor.test(as.numeric(check_cor_labs[,j]), as.numeric(check_cor_labs[,i]), method = "pearson")
+      
+  #Get the correlation
+  
+  test$estimate
+  
+  #Get the p-value 
+  test$p.value
+
+  pvalues[j, i] <- test$p.value
+  correlations[j, i] <- test$estimate
+  
+  i = i+1
+  }
+  j=j+1
+}
+
+#correlations
+#pvalues
+
+#Find which variables are p-value < 0.05
+pvalues <=0.05
+
+# need data as matrix
+mm <- as.matrix(correlations, ncol = ncol(correlations))
+
+#png("/Users/laurenblake/Dropbox/Lauren Blake/Figures/5_values_T3.png",
+#  width = 5*300,        # 5 x 300 pixels
+#  height = 5*300,
+#  res = 300,            # 300 pixels per inch
+#  pointsize = 8)  
+
+heatmap.2(x = mm, Rowv = FALSE, Colv = FALSE, dendrogram = "none", main = "Correlations between \n lab values, T3", notecex = 2, trace = "none", key = TRUE, margins = c(12,8))
+
+dev.off()
+
+```
+
+
+# How much do the individual lab values change over time?
+
+```{r}
+# Include individual
+ind_only_values <- c(2,3,12, 13, 21, 22, 23, 24, 25, 51)
+
+ind_only_labs <- ind_only[,ind_only_values]
+
+# Stratify the 5 lab values by time point
+check_cor_labs1 <- ind_only_labs[which(ind_only_labs$Time == 1), ]
+
+check_cor_labs2 <- ind_only_labs[which(ind_only_labs$Time == 2), ]
+
+# Time points 1 and 2
+
+cor(check_cor_labs1$RBC, check_cor_labs2$RBC, "pairwise.complete.obs")
+
+cor(check_cor_labs1$Platelet, check_cor_labs2$Platelet, "pairwise.complete.obs")
+
+cor(check_cor_labs1$AN, check_cor_labs2$AN, "pairwise.complete.obs")
+
+cor(check_cor_labs1$AE, check_cor_labs2$AE, "pairwise.complete.obs")
+
+cor(check_cor_labs1$AL, check_cor_labs2$AL, "pairwise.complete.obs")
+
+cor(check_cor_labs1$AB, check_cor_labs2$AB, "pairwise.complete.obs")
+
+cor(check_cor_labs1$AM, check_cor_labs2$AM, "pairwise.complete.obs")
+
+# Time points 2 and 3
+
+check_cor_labs2 <- ind_only_labs[which(ind_only_labs$Time == 2), ]
+check_cor_labs3 <- ind_only_labs[which(ind_only_labs$Time == 3), ]
+
+check_cor_labs23 <- merge(check_cor_labs2, check_cor_labs3, by = "BAN_ID")
+
+cor(check_cor_labs23$RBC.x, check_cor_labs23$RBC.y, "pairwise.complete.obs")
+
+cor(check_cor_labs23$Platelet.x, check_cor_labs23$Platelet.y, "pairwise.complete.obs")
+
+cor(check_cor_labs23$AN.x, check_cor_labs23$AN.y, "pairwise.complete.obs")
+
+cor(check_cor_labs23$AE.x, check_cor_labs23$AE.y, "pairwise.complete.obs")
+
+cor(check_cor_labs23$AL.x, check_cor_labs23$AL.y, "pairwise.complete.obs")
+
+cor(check_cor_labs23$AB.x, check_cor_labs23$AB.y, "pairwise.complete.obs")
+
+cor(check_cor_labs23$AM.x, check_cor_labs23$AM.y, "pairwise.complete.obs")
+
+
+# T0 to T1
+# Import T0
+check_cor_labs0 <- read.csv("../data/T0_consolid.csv", stringsAsFactors = FALSE)
+
+check_cor_labs1 <- ind_only_labs[which(ind_only_labs$Time == 1), ]
+
+# Merge T0 and T1
+
+cor(check_cor_labs1$RBC, as.numeric(check_cor_labs0$RBC), "pairwise.complete.obs")
+
+cor(check_cor_labs1$Platelet, check_cor_labs0$Platelet, "pairwise.complete.obs")
+
+cor(check_cor_labs1$AN, check_cor_labs0$AN, "pairwise.complete.obs")
+
+cor(check_cor_labs1$AE, check_cor_labs0$AE, "pairwise.complete.obs")
+
+cor(check_cor_labs1$AL, check_cor_labs0$AL, "pairwise.complete.obs")
+
+cor(check_cor_labs1$AB, check_cor_labs0$AB, "pairwise.complete.obs")
+
+cor(check_cor_labs1$AM, check_cor_labs0$AM, "pairwise.complete.obs")
+
+```
+

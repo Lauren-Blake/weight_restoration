@@ -1,0 +1,186 @@
+---
+title: "genotypes"
+author: "Lauren Blake"
+date: "2018-08-14"
+output: workflowr::wflow_html
+---
+
+## Introduction
+
+The goal of this script is to analyze the genotypes of the individuals in the 
+
+```{r}
+# Load library
+
+library(ggplot2)
+library(cowplot)
+
+# Load the PC genotype data
+
+usa2.pcawithref.menv <- read.table("../data/usa2.pcawithref.menv.mds_cov", stringsAsFactors = FALSE, header = TRUE)
+
+# Reformat cells
+
+test <- t(unlist(strsplit(as.character(usa2.pcawithref.menv[1,]), " ")))
+
+reformat_array <- array(NA, dim = c(nrow(usa2.pcawithref.menv),28))
+
+for (i in 1:nrow(usa2.pcawithref.menv)){
+
+reformat_array[i,] <- t(unlist(strsplit(as.character(usa2.pcawithref.menv[i,]), " ")))
+}
+
+colnames(reformat_array) <- c("FID", "IID", "SOL", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17", "C18", "C19", "C20", "st1", "st2", "st3", "st4", "st5")
+
+reformat_array <- as.data.frame(reformat_array, stringsAsFactors = FALSE)
+
+# BAN to genotype ids
+
+Ban_geno <- read.csv("../data/Ban_geno.csv")
+Ban_geno <- Ban_geno[,1:3]
+
+link <- merge(reformat_array, Ban_geno, by.x = c("IID"), by.y = c("External_code"))
+
+```
+
+# Genotype PCs
+
+```{r}
+# Initial plot
+plot(link$C1, link$C2)
+
+# Reorder by BAN_ID
+
+order_link <- link[order(link$BAN_ID),] 
+
+# Integrate with race/ethnicity
+
+clinical_info <- read.csv("../data/clinical_sample_info_geno.csv")
+
+race_eth <- cbind(clinical_info$BAN_ID, clinical_info$Race, clinical_info$Ethnicity)
+
+dedup <- race_eth[!duplicated(race_eth),]
+colnames(dedup) <- c("BAN_ID", "Race", "Ethnicity")
+
+# Combine PCs and Race/Ethnicity
+
+pcs_race <- merge(order_link, dedup, by = c("BAN_ID"))
+
+# Plot Race
+summary(pcs_race$Race)
+
+pcs_race$C1 <- as.numeric(pcs_race$C1)
+pcs_race$C2 <- as.numeric(pcs_race$C2)
+pcs_race$Race <- as.factor(pcs_race$Race)
+
+race_plot <- ggplot(pcs_race, aes(C1, C2, color = Race)) + geom_point(aes(color = pcs_race$Race)) + xlab("PC1") + ylab("PC2") + scale_color_discrete(name = c("Race"), labels = c("White", "Black", "Asian")) 
+
+plot_grid(race_plot)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/PCA_genotype_33.png", race_plot,
+#          base_aspect_ratio = 1)
+
+# Plot Ethnicity
+
+summary(pcs_race$Ethnicity)
+
+race_ethnicity <- ggplot(pcs_race, aes(as.numeric(C1), as.numeric(C2))) + geom_point(color = as.factor(pcs_race$Ethnicity))
+
+plot_grid(race_ethnicity)
+```
+
+# Do genotype PCs correlate with gene expression PCs?
+
+```{r}
+# Load individuals
+
+inds <- read.csv("../data/lm_covar_fixed_random.csv")
+
+
+# Load gene expression data from all 156 samples
+
+normalized_data <- read.csv("../data/gene_expression_filtered_T1T5.csv")
+
+# Run PCA on the normalized data
+
+pca_genes <- prcomp(t(normalized_data[,2:157]), scale = TRUE, center = TRUE)
+
+matrixpca <- pca_genes$x
+PC1 <- matrixpca[,1]
+PC2 <- matrixpca[,2]
+pc3 <- matrixpca[,3]
+pc4 <- matrixpca[,4]
+pc5 <- matrixpca[,5]
+
+matrixpca <- as.data.frame(matrixpca)
+
+ggplot(matrixpca, aes(PC1, PC2)) + geom_point(color = as.factor(inds$Race))
+
+# Merge
+
+pcs_gene <- merge(inds, pcs_race, by.x = c("Individual"), by.y = c("BAN_ID"), all.x = TRUE)
+
+#write.csv(pcs_gene, file = "../data/pcs_genes.csv")
+
+# Genotype PCs and gene expression PCs
+
+# Genotype PCs- inds PC1, PC2, pc3, pc4, pc5
+
+geno_pcs <- cbind(pcs_gene$C1, pcs_gene$C2, pcs_gene$C3, pcs_gene$C4, pcs_gene$C5)
+
+# Gene expression PCs PC1, PC2, pc3, pc4, pc5
+
+exp_pcs <- matrixpca
+
+# Look at the correlation between genotype and gene expression PCs 
+
+PC_pvalues <- matrix(data = NA, nrow = 5, ncol = 5)
+PC_r2 <- matrix(data = NA, nrow = 5, ncol = 5)
+
+j=1
+for (i in 1:5){
+  for (j in 1:5){
+  
+  checkPC1 <- lm(exp_pcs[,j] ~ geno_pcs[,i])
+
+#Get the summary statistics from it
+  summary(checkPC1)
+
+#Get the p-value of the F-statistic
+  summary(checkPC1)$fstatistic
+
+  fstat <- as.data.frame(summary(checkPC1)$fstatistic)
+  p_fstat <- 1-pf(fstat[1,], fstat[2,], fstat[3,])
+  
+#Fraction of the variance explained by the model
+  r2_value <- summary(checkPC1)$r.squared
+
+#Put the summary statistics into the matrix w
+
+  PC_pvalues[j, i] <- p_fstat
+  PC_r2[j, i] <- sqrt(r2_value)
+  
+  }
+
+}
+
+PC_pvalues
+
+PC_r2
+
+# 
+
+summary(lm(exp_pcs$PC1 ~ as.factor(inds$Individual)))
+summary(lm(exp_pcs$PC1 ~ as.factor(inds$Race)))
+summary(lm(exp_pcs$PC2 ~ as.factor(inds$Race)))
+summary(lm(exp_pcs$PC1 ~ geno_pcs[,1]))
+summary(lm(exp_pcs$PC2 ~ geno_pcs[,1]))
+
+summary(lm(geno_pcs[,1] ~ as.factor(inds$Race)))
+summary(lm(geno_pcs[,2] ~ as.factor(inds$Race)))
+summary(lm(geno_pcs[,3] ~ as.factor(inds$Race)))
+summary(lm(geno_pcs[,4] ~ as.factor(inds$Race)))
+summary(lm(geno_pcs[,5] ~ as.factor(inds$Race)))
+
+```
+

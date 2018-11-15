@@ -1,0 +1,269 @@
+---
+title: "weight_over_one_year"
+author: "Lauren Blake"
+date: "2018-11-15"
+output: workflowr::wflow_html
+---
+
+## Introduction
+
+The goal of this analysis is to look at the weight changes relative to discharge.
+
+```{r}
+# Open libraries
+library(ggplot2)
+library(VennDiagram)
+
+# Open weight change data
+weight_change <- read.csv("../data/weight_relapse_weight_info.csv", stringsAsFactors = FALSE)
+```
+
+# Weight change over time, part 1
+
+## T1 to T2
+```{r}
+# Plot weight change over time
+
+boxplot(weight_change$Weight_diff_T1T2, xlab = "T1 to T2", ylab = "Weight change (lbs)")
+
+# Number of individuals that lost weight
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_T1T2 < 0),]
+nrow(weight_subset)
+
+mean(weight_subset$Weight_diff_T1T2)
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_T1T2 > 0),]
+nrow(weight_subset)
+
+mean(weight_subset$Weight_diff_T1T2)
+```
+
+## T2 to T3
+```{r}
+# Plot weight change over time
+
+boxplot(weight_change$Weight_diff_T3T2, xlab = "T2 to T3", ylab = "Weight change (lbs)")
+
+# Number of individuals that lost weight
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_T3T2 < -5),]
+nrow(weight_subset)
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_T3T2 < 0),]
+nrow(weight_subset)
+
+mean(weight_subset$Weight_diff_T3T2)
+summary(weight_subset$Weight_diff_T3T2)
+
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_T3T2 > 5),]
+nrow(weight_subset)
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_T3T2 > 0),]
+nrow(weight_subset)
+
+mean(weight_subset$Weight_diff_T3T2)
+summary(weight_subset$Weight_diff_T3T2)
+```
+
+## T2 to T4
+```{r}
+# Plot weight change over time
+
+boxplot(weight_change$Weight_diff_T4T2, xlab = "T2 to T4", ylab = "Weight change (lbs)")
+
+# Number of individuals that lost weight
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_T4T2 < -5),]
+nrow(weight_subset)
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_T4T2 < 0),]
+nrow(weight_subset)
+
+mean(weight_subset$Weight_diff_T4T2)
+summary(weight_subset$Weight_diff_T4T2)
+
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_T4T2 > 5),]
+nrow(weight_subset)
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_T4T2 > 0),]
+nrow(weight_subset)
+
+mean(weight_subset$Weight_diff_T4T2)
+summary(weight_subset$Weight_diff_T4T2)
+```
+
+## T2 to T5
+```{r}
+# Plot weight change over time
+
+boxplot(weight_change$Weight_diff_T5T2, xlab = "T2 to T5", ylab = "Weight change (lbs)")
+
+# Number of individuals that lost weight
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_T5T2 < -5),]
+nrow(weight_subset)
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_T5T2 < 0),]
+nrow(weight_subset)
+
+mean(weight_subset$Weight_diff_T5T2)
+summary(weight_subset$Weight_diff_T5T2)
+
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_T5T2 > 5),]
+nrow(weight_subset)
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_T5T2 > 0),]
+nrow(weight_subset)
+
+mean(weight_subset$Weight_diff_T5T2)
+summary(weight_subset$Weight_diff_T5T2)
+```
+
+# Are the same individuals losing weight at each time period?
+
+```{r}
+# Losing 0 pounds
+
+weight_subset3 <- weight_change[which(weight_change$Weight_diff_T3T2 < 0),]
+nrow(weight_subset3)
+
+weight_subset4 <- weight_change[which(weight_change$Weight_diff_T4T2 < 0),]
+nrow(weight_subset4)
+
+weight_subset5 <- weight_change[which(weight_change$Weight_diff_T5T2 < 0),]
+nrow(weight_subset5)
+
+mylist <- list()
+mylist[["T2 to T3"]] <- weight_subset3$ID
+mylist[["T2 to T4"]] <- weight_subset4$ID
+mylist[["T2 to T5"]] <- weight_subset5$ID
+
+intersect(mylist$`T2 to T3`, mylist$`T2 to T4`)
+intersect(mylist$`T2 to T3`, mylist$`T2 to T5`)
+intersect(mylist$`T2 to T4`, mylist$`T2 to T5`)
+
+intersect(intersect(mylist$`T2 to T3`, mylist$`T2 to T4`), mylist$`T2 to T5`)
+
+# Make as pdf 
+Four_comp <- venn.diagram(mylist, filename= NULL, main=NULL, cex=1.5 , fill = NULL, lty=1, height=2000, width=2000, scaled = FALSE)
+
+grid.draw(Four_comp)
+dev.off()
+
+pdf(file = "~/Dropbox/Figures/Negative_weight_loss.pdf")
+  grid.draw(Four_comp)
+dev.off()
+
+# Losing 5 pounds
+
+weight_subset3 <- weight_change[which(weight_change$Weight_diff_T3T2 < -5),]
+nrow(weight_subset3)
+
+weight_subset4 <- weight_change[which(weight_change$Weight_diff_T4T2 < -5),]
+nrow(weight_subset4)
+
+weight_subset5 <- weight_change[which(weight_change$Weight_diff_T5T2 < -5),]
+nrow(weight_subset5)
+
+mylist <- list()
+mylist[["T2 to T3"]] <- weight_subset3$ID
+mylist[["T2 to T4"]] <- weight_subset4$ID
+mylist[["T2 to T5"]] <- weight_subset5$ID
+
+intersect(mylist$`T2 to T3`, mylist$`T2 to T4`)
+intersect(mylist$`T2 to T3`, mylist$`T2 to T5`)
+intersect(mylist$`T2 to T4`, mylist$`T2 to T5`)
+
+intersect(intersect(mylist$`T2 to T3`, mylist$`T2 to T4`), mylist$`T2 to T5`)
+
+# Make as pdf 
+Four_comp <- venn.diagram(mylist, filename= NULL, main=NULL, cex=1.5 , fill = NULL, lty=1, height=2000, width=2000, scaled = FALSE)
+
+grid.draw(Four_comp)
+dev.off()
+
+pdf(file = "~/Dropbox/Figures/5_pound_weight_loss.pdf")
+  grid.draw(Four_comp)
+dev.off()
+```
+
+
+# Weight change over time, part 2
+
+## T2 to RRED T4
+```{r}
+# Plot weight change over time
+
+boxplot(weight_change$Weight_diff_REDT4T2, xlab = "T2 to RRED T4", ylab = "Weight change (lbs)")
+
+# Number of individuals that lost weight
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_REDT4T2 < -5),]
+nrow(weight_subset)
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_REDT4T2 < 0),]
+nrow(weight_subset)
+
+mean(weight_subset$Weight_diff_REDT4T2)
+summary(weight_subset$Weight_diff_REDT4T2)
+
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_REDT4T2 > 5),]
+nrow(weight_subset)
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_REDT4T2 > 0),]
+nrow(weight_subset)
+
+mean(weight_subset$Weight_diff_REDT4T2)
+summary(weight_subset$Weight_diff_REDT4T2)
+```
+
+
+## T2 to RRED T5
+```{r}
+# Plot weight change over time
+
+boxplot(weight_change$Weight_diff_REDT5T2, xlab = "T2 to RRED T5", ylab = "Weight change (lbs)")
+
+# Number of individuals that lost weight
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_REDT5T2 < -5),]
+nrow(weight_subset)
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_REDT5T2 < 0),]
+nrow(weight_subset)
+
+mean(weight_subset$Weight_diff_REDT5T2)
+summary(weight_subset$Weight_diff_REDT5T2)
+
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_REDT5T2 > 5),]
+nrow(weight_subset)
+
+weight_subset <- weight_change[which(weight_change$Weight_diff_REDT5T2 > 0),]
+nrow(weight_subset)
+
+mean(weight_subset$Weight_diff_REDT5T2)
+summary(weight_subset$Weight_diff_REDT5T2)
+```
+
+# How many individuals lost weight relative to admission weight?
+
+```{r}
+# T1 to T3
+weight_subset <- weight_change[which(weight_change$Weight_diff_T3T1 < 0),]
+nrow(weight_subset)
+
+# T1 to T4
+weight_subset <- weight_change[which(weight_change$Weight_diff_T4T1 < 0),]
+nrow(weight_subset)
+
+# T1 to T5
+weight_subset <- weight_change[which(weight_change$Weight_diff_T5T1 < 0),]
+nrow(weight_subset)
+```
+

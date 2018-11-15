@@ -1,0 +1,43 @@
+---
+title: "Important Transcript-Level Estimates"
+author: "Lauren Blake"
+date: 2018-07-13
+output: workflowr::wflow_html
+editor_options: 
+  chunk_output_type: console
+---
+
+
+
+
+# Introduction
+
+Evaluate transcript-level
+```{r}
+# Install library
+
+library("tximport")
+library("GenomicFeatures")
+
+txdb2 <- makeTxDbFromGFF("/Users/laurenblake/Dropbox/Lauren Blake/Bioinformatics results/gencode.v22.annotation.gtf", format=c("gtf"),
+                dataSource="Gencode online",
+                organism="Homo sapiens",
+                taxonomyId=NA,
+                circ_seqs=character(),
+                chrominfo=NULL,
+                miRBaseBuild=NA,
+                metadata=NULL)
+
+k <- keys(txdb2, keytype = "TXNAME")
+tx2gene <- select(txdb2, k, "GENEID", "TXNAME")
+
+length(unique(tx2gene[,1]))
+length(unique(tx2gene[,2]))
+
+
+```
+
+# Awk command to go from annotation file to ENSG and gene name only
+
+cat gencode.v28.annotation.gtf | awk 'BEGIN{FS="\t"}{split($9,a,";"); if($3~"gene") print a[1]"\t"a[3]"\t"$1":"$4"-"$5"\t"$7}' | sed 's/gene_id "//' | sed 's/gene_id "//' | sed 's/gene_biotype "//'| sed 's/gene_name "//' | sed 's/"//g' > Homo_sapiens.GRCh38.92_table.txt
+

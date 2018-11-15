@@ -1,8 +1,52 @@
 ---
+site: workflowr::wflow_site
 title: "Home"
 output:
-  html_document:
+  workflowr::wflow_html:
     toc: false
 ---
 
-Welcome to my research website.
+Welcome to my research notebook. 
+
+# Data processing
+
+Click [here](./Collection_dates.html) for a script to calculate the differences between blood collection dates. 
+
+Click [here](./Converting_IDs.html) for a script to look at the names of the samples on flowcell 2. 
+
+This [website](https://www.gencodegenes.org/faq.html) has a good explanation about GENCODE annotations. Importantly, "In practical terms, the GENCODE annotation is identical to the Ensembl annotation."
+
+Click [here](./genocode_annotation_info.html) for information about annotation files. 
+
+# Global variation in the gene expression data
+
+Click [here](./Global_variation.html) for a global survey of the variation in gene expression data.
+
+# Exploring clinical covariates
+
+Click [here](./correlations_bet_covariates.html), [here](./variables_by_time.html), and [here](./correlations_over_time.html) to look at the correlations between covariates. 
+
+Lab changes over time can be found [here](./correlations_over_time.html). 
+
+To look at the relationship between self-reported race and ancestry, as well as race vs. genotype PCs, click [here](./genotypes.html) 
+
+# Exploring weight over time
+
+Weight changes over time can be found [here](./weight_over_one_year.html).
+
+Correlation between weight and other clinical covariates can be found [here](./Weight_change_preliminary_analysis.html)
+
+# Before and after nutritional rehabilitation: Differential expression/WGCNA/preparation for STEM: 
+
+[Analysis with clinical covariates not including weight change as a covariate in the differential expression model.](./voom_limma.html)
+
+[Differential expression analysis using hg19/hg37](./voom_limma_hg37.html)
+
+[Differential expression analysis + DAVID input including weight change as a covariate.](./voom_limma_weight_change.html)
+
+To do:
+
+Finish cleaning up covariate analysis (Preliminary_clinical_covariate.Rmd); Move flowcell technical factor analysis from import_transcript_level_estimates.Rmd. 
+
+Relationships between gene expression PCs and clinical covariates.
+

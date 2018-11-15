@@ -1,0 +1,213 @@
+---
+title: "Weight_change_preliminary_analysis"
+author: "Lauren Blake"
+date: "2018-09-17"
+output: workflowr::wflow_html
+---
+
+# Introduction
+
+The goal of this script is to identify the individuals that weight relapsed and the amount of change they underwent. 
+
+## Get weight change data
+```{r}
+# Load libraries
+
+library(ggplot2)
+library(cowplot)
+
+# Get weight change data
+weight_change <- read.csv("../data/weight_change.csv")
+```
+
+## Summary of weight change data
+
+```{r}
+# Subset to time point 3
+
+weight_change_t3 <- weight_change[weight_change$time == 3,]
+
+summary(weight_change_t3)
+
+# How many are negative and how many are neutral/positive weight gain?
+
+summary(weight_change_t3$Weight_change <0)
+
+weight_change_t3[,5] <- weight_change_t3$Weight_change <0
+colnames(weight_change_t3) <- c("BAN_ID", "time", "Weight", "Weight_change", "weight_relapse")
+
+# Weight change from T2 to T3
+
+weight_change_t3 <- weight_change_t3[complete.cases(weight_change_t3), ]
+weight_change_t3_plot <- ggplot(weight_change_t3, aes(weight_relapse, Weight_change)) + geom_boxplot() + xlab("Lost weight from T2 to T3") + ylab("Weight change from T2 to T3")
+
+save_plot("/Users/laurenblake/Dropbox/Figures/weight_change_t3.png", weight_change_t3_plot,          base_aspect_ratio = 1)
+
+
+
+
+
+
+```
+
+# Weights over time, stratified by weight loss at T3
+
+```{r}
+# Subset to time point 1
+
+weight_change_t1 <- weight_change[weight_change$time == 1, 1:5]
+
+# How many are negative and how many are neutral/positive weight gain?
+
+summary(weight_change_t1$Relapse_t3 >0)
+
+weight_change_t1[,6] <- weight_change_t1$Relapse_t3 >0
+colnames(weight_change_t1) <- c("BAN_ID", "time", "Weight", "Weight_change", "Relapse_t3", "Relapse_notes")
+
+weight_change_t1 <- weight_change_t1[complete.cases(weight_change_t1), ]
+
+# Plot weight at T1 
+weight_t1_plot <- ggplot(weight_change_t1, aes(Relapse_notes, Weight)) + geom_boxplot() + xlab("Lost weight from T2 to T3") + ylab("Weight") + ggtitle("Weight at T1") 
+
+save_plot("/Users/laurenblake/Dropbox/Figures/weight_t1.png", weight_t1_plot,          base_aspect_ratio = 1)
+
+
+# Subset to time point 2
+
+weight_change_t1 <- weight_change[weight_change$time == 2, 1:5]
+
+# How many are negative and how many are neutral/positive weight gain?
+
+summary(weight_change_t1$Relapse_t3 >0)
+
+weight_change_t1[,6] <- weight_change_t1$Relapse_t3 >0
+colnames(weight_change_t1) <- c("BAN_ID", "time", "Weight", "Weight_change", "Relapse_t3", "Relapse_notes")
+
+weight_change_t1 <- weight_change_t1[complete.cases(weight_change_t1), ]
+
+# Plot weight at T1 
+weight_t2_plot <- ggplot(weight_change_t1, aes(Relapse_notes, Weight)) + geom_boxplot() + xlab("Lost weight from T2 to T3") + ylab("Weight") + ggtitle("Weight at T2") + ylim(53,125)
+
+save_plot("/Users/laurenblake/Dropbox/Figures/weight_t2.png", weight_t2_plot,          base_aspect_ratio = 1)
+
+
+# Weight change from T1 to T2
+
+weight_change_t1 <- weight_change_t1[complete.cases(weight_change_t1), ]
+weight_change_t1_plot <- ggplot(weight_change_t1, aes(Relapse_notes, Weight_change)) + geom_boxplot() + xlab("Lost weight from T2 to T3") + ylab("Weight change from T1 to T2") + ylim(-15,46)
+
+plot_grid(weight_change_t1_plot)
+
+save_plot("/Users/laurenblake/Dropbox/Figures/weight_change_t1t2.png", weight_change_t1_plot,          base_aspect_ratio = 1)
+
+
+
+# Subset to time point 3
+
+weight_change_t1 <- weight_change[weight_change$time == 3, 1:5]
+
+# How many are negative and how many are neutral/positive weight gain?
+
+summary(weight_change_t1$Relapse_t3 >0)
+
+weight_change_t1[,6] <- weight_change_t1$Relapse_t3 >0
+colnames(weight_change_t1) <- c("BAN_ID", "time", "Weight", "Weight_change", "Relapse_t3", "Relapse_notes")
+
+weight_change_t1 <- weight_change_t1[complete.cases(weight_change_t1), ]
+
+# Plot weight at T1 
+weight_t3_plot <- ggplot(weight_change_t1, aes(Relapse_notes, Weight)) + geom_boxplot() + xlab("Lost weight from T2 to T3") + ylab("Weight") + ggtitle("Weight at T3") + ylim(53,125)
+
+save_plot("/Users/laurenblake/Dropbox/Figures/weight_t3.png", weight_t3_plot, base_aspect_ratio = 1)
+
+
+weight_change_t1_plot <- ggplot(weight_change_t1, aes(Relapse_notes, Weight_change)) + geom_boxplot() + xlab("Lost weight from T2 to T3") + ylab("Weight change from T2 to T3") + ylim(-15,46)
+
+plot_grid(weight_change_t1_plot)
+
+save_plot("/Users/laurenblake/Dropbox/Figures/weight_change_t2t3.png", weight_change_t1_plot,          base_aspect_ratio = 1)
+
+```
+
+# Let's look at the 8 individuals
+
+```{r}
+# Let's look at the weight over time for the individuals with weight loss
+
+weight_change_8 <- weight_change[weight_change$Relapse_t3 == 1,]
+
+weight_change_8 <- weight_change_8[complete.cases(weight_change_8[,1:5]), ]
+
+# Plot the individuals
+
+ind_time <- ggplot(weight_change_8, aes(time, Weight, colour = as.factor(weight_change_8$BAN_ID))) + geom_point() + geom_line() + theme(legend.position="none") + xlab("Time")
+
+plot_grid(ind_time)
+
+save_plot("/Users/laurenblake/Dropbox/Figures/weight_change_no_t3.png", ind_time,          base_aspect_ratio = 1)
+
+# Summarize the 
+
+weight_change_8_t3 <- weight_change_8[weight_change_8$time == 3,]
+
+summary(weight_change_8_t3)
+```
+
+# Correlation between weight relapse and other variables
+
+```{r}
+# Read in the clinical covariates
+
+clinical_sample_info <- read.csv("../data/lm_covar_fixed_random.csv")
+dim(clinical_sample_info)
+
+# Subset to T1-T3
+
+clinical_sample <- clinical_sample_info[1:144,(-12)]
+
+dim(clinical_sample)
+
+# Relapse 
+
+chisq.test(as.factor(clinical_sample$Time), as.factor(clinical_sample$Relapse_t3), simulate.p.value = TRUE)$p.value
+
+# Individual-yes
+
+chisq.test(as.factor(clinical_sample$Individ), as.factor(clinical_sample$Relapse_t3), simulate.p.value = TRUE)$p.value
+
+# Age-yes
+summary(lm(clinical_sample$Age ~ as.factor(clinical_sample$Relapse_t3)))
+
+# BE-no
+
+chisq.test(as.factor(clinical_sample$BE_GROUP), as.factor(clinical_sample$Relapse_t3), simulate.p.value = TRUE)$p.value
+
+# Psych meds- no
+
+chisq.test(as.factor(clinical_sample$psychmeds), as.factor(clinical_sample$Relapse_t3), simulate.p.value = TRUE)$p.value
+
+# RBC-no
+
+summary(lm(clinical_sample$RBC ~ as.factor(clinical_sample$Relapse_t3)))
+
+# AE-no
+
+summary(lm(clinical_sample$AE ~ as.factor(clinical_sample$Relapse_t3)))
+
+# Race- no
+
+chisq.test(as.factor(clinical_sample$Race), as.factor(clinical_sample$Relapse_t3), simulate.p.value = TRUE)$p.value
+
+# AL- no
+
+summary(lm(clinical_sample$AL ~ as.factor(clinical_sample$Relapse_t3)))
+
+# AN- no
+
+summary(lm(clinical_sample$AN ~ as.factor(clinical_sample$Relapse_t3)))
+
+# RIN- no
+
+summary(lm(clinical_sample$RIN ~ as.factor(clinical_sample$Relapse_t3)))
+
+```

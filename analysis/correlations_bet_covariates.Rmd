@@ -1,0 +1,212 @@
+---
+title: "Correlations Part I"
+author: "Lauren Blake"
+date: 2018-07-18
+output: workflowr::wflow_html
+---
+
+
+
+
+# Introduction
+
+The goal of this script is to look for correlations in interindividual features.  
+
+# Individual-specific measures
+
+```{r}
+# Load library for plotting
+library(cowplot)
+library(ggplot2)
+
+# Load data
+ind_only <- read.csv("../data/notimecovariates.csv")
+str(ind_only)
+```
+
+# Look at all correlations
+
+```{r}
+ind_only_characteristics <- c(2,3,4,7,8,9,10,11,12,13)
+check_cor <- ind_only[,ind_only_characteristics]
+
+# Obtain correlations and pvalues
+
+pvalues <- matrix(data = NA, nrow = ncol(check_cor), ncol = ncol(check_cor))
+colnames(pvalues) <- colnames(check_cor)
+rownames(pvalues) <- colnames(check_cor)
+correlations <- matrix(data = NA, nrow = ncol(check_cor), ncol = ncol(check_cor))
+colnames(correlations) <- colnames(check_cor)
+rownames(correlations) <- colnames(check_cor)
+
+j=1
+for (j in 1:ncol(check_cor)){
+  
+  for (i in 1:ncol(check_cor)){
+      
+  test <- cor.test(check_cor[,j], check_cor[,i], method = "pearson")
+      
+  #Get the correlation
+  
+  test$estimate
+  
+  #Get the p-value 
+  test$p.value
+
+  pvalues[j, i] <- test$p.value
+  correlations[j, i] <- test$estimate
+  
+  i = i+1
+  }
+  j=j+1
+}
+
+correlations
+pvalues
+
+#Find which variables are p-value < 0.05
+pvalues <=0.05
+```
+
+Significant correlations: 
+
+* EDU_days and bmiT1T2
+* EDU_days and bmiT2T3
+* bmiT1T2 and bmiT2T3
+* bmiT2T3 and bmiT3T4
+* EDU_days and blooddrawT1T2
+* bmiT1T2 and blooddrawT1T2
+* bmiT2T3 and blooddrawT1T2
+* AMA and bmiT2T3
+* age_onset and bmiT3T4
+
+Suprisingly, AMA and EDU_days/AMA and days between T1 and T2 blood draws were not significantly correlated (maybe because those indviduals staying less than one week were not counted)?
+
+# Plot of AMA and EDU day
+
+```{r}
+AMA_EDU <- ggplot(ind_only, aes(as.factor(ind_only$AMA), ind_only$EDU_days)) + geom_boxplot() + geom_dotplot(binaxis='y', stackdir='center', dotsize=0.5) + xlab("AMA status") + ylab("EDU days") + ggtitle("EDU days versus AMA status")
+
+plot_grid(AMA_EDU)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/AMA_EDU.png", AMA_EDU,
+#          base_aspect_ratio = 1)
+
+```
+
+
+# Plots of significant correlations
+
+## EDU_days and bmiT1T2
+```{r}
+EDU_change <- ggplot(ind_only, aes(ind_only$EDU_days, ind_only$bmiT1T2)) + geom_point() + xlab("EDU days") + ylab("BMI change (T1 to T2)") + ggtitle("BMI change versus EDU days")
+
+plot_grid(EDU_change)
+
+save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/EDU_change_bmiT1T2.png", EDU_change,
+          base_aspect_ratio = 1)
+
+```
+
+## EDU_days and bmiT2T3
+
+```{r}
+EDU_change <- ggplot(ind_only, aes(ind_only$EDU_days, ind_only$bmiT2T3)) + geom_point() + xlab("EDU days") + ylab("BMI change (T2 to T3)") + ggtitle("BMI change versus EDU days")
+
+plot_grid(EDU_change)
+
+save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/EDU_change_bmiT2T3.png", EDU_change,
+          base_aspect_ratio = 1)
+
+```
+
+## bmiT1T2 and bmiT2T3
+
+```{r}
+EDU_change <- ggplot(ind_only, aes(ind_only$bmiT1T2, ind_only$bmiT2T3)) + geom_point() + xlab("BMI change (T1 to T2)") + ylab("BMI change (T2 to T3)") + ggtitle("BMI changes")
+
+plot_grid(EDU_change)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/bmiT1T2_bmiT2T3.png", EDU_change,
+#          base_aspect_ratio = 1)
+
+```
+
+## bmiT2T3 and bmiT3T4
+
+```{r}
+EDU_change <- ggplot(ind_only, aes(ind_only$bmiT2T3, ind_only$bmiT3T4)) + geom_point() + xlab("BMI change (T2 to T3)") + ylab("BMI change (T3 to T4)") + ggtitle("BMI changes")
+
+plot_grid(EDU_change)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/bmiT2T3_bmiT3T4.png", EDU_change,
+#          base_aspect_ratio = 1)
+
+```
+
+## AMA and bmiT2T3
+
+
+```{r}
+AMA_EDU <- ggplot(ind_only, aes(as.factor(ind_only$AMA), ind_only$bmiT2T3)) + geom_boxplot() + geom_dotplot(binaxis='y', stackdir='center', dotsize=0.5) + xlab("AMA status") + ylab("BMI change (T2 to T3)") + ggtitle("BMI change (T2 to T3) versus AMA status")
+
+plot_grid(AMA_EDU)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/AMA_EDU.png", AMA_EDU,
+#          base_aspect_ratio = 1)
+```
+
+## age_onset and bmiT3T4
+
+```{r}
+EDU_change <- ggplot(ind_only, aes(ind_only$age_onset, ind_only$bmiT3T4)) + geom_point() + xlab("Age of onset") + ylab("BMI change (T3 to T4)") + ggtitle("Age of onset versus BMI change (T3 to T4")
+
+plot_grid(EDU_change)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/age_onset_bmiT3T4.png", EDU_change,
+#          base_aspect_ratio = 1)
+
+```
+
+# Technical variables
+
+```{r}
+RIN_over_time <- read.csv("../data/RIN_over_time.csv")
+
+RIN_by_time <- ggplot(RIN_over_time, aes(as.factor(RIN_over_time[,3]), RIN_over_time[,2])) + geom_boxplot(aes(fill=as.factor(RIN_over_time[,3]))) + geom_jitter(width = 0.15) +  xlab("Time") + ylab("RIN score") + ggtitle("RIN scores by timepoint (T1-T3)") + scale_fill_manual(name = "Time", values=c("#F8766D", "#B79F00", "#00BA38"))
+
+plot_grid(RIN_by_time)
+
+summary(lm(RIN_over_time[,2] ~ as.factor(t(RIN_over_time[,3]))))
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/RIN_by_time.png", RIN_by_time,
+#          base_aspect_ratio = 1)
+```
+
+# On age, age of onset, and hospitalizations
+
+```{r}
+# Look at correlations
+
+cor(ind_only$age_onset, ind_only$age, "pairwise.complete.obs")
+cor(ind_only$Previous_hospitalizations, ind_only$age, "pairwise.complete.obs")
+cor(ind_only$age_onset, ind_only$Previous_hospitalizations, "pairwise.complete.obs")
+
+ages <- ggplot(ind_only, aes(ind_only$age_onset, ind_only$age)) + geom_point() + xlab("Age of onset") + ylab("Age at T1") + ggtitle("Age at T1 versus age of onset")
+
+plot_grid(ages)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/Age_age_onset.png", ages,
+#          base_aspect_ratio = 1)
+
+prev_hosp <- ggplot(ind_only, aes(ind_only$age_onset, ind_only$Previous_hospitalizations)) + geom_point() + xlab("Age of onset") + ylab("Previous hospitalizations") + ggtitle("Age of onset versus prev. hospital.")
+
+plot_grid(prev_hosp)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/Age_onset_prev_hosp.png", prev_hosp,
+#          base_aspect_ratio = 1)
+```
+
+
+
+

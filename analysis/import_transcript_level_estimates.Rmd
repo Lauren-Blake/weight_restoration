@@ -1,0 +1,989 @@
+---
+title: "Important Transcript-Level Estimates"
+author: "Lauren Blake"
+date: 2018-07-13
+output: workflowr::wflow_html
+editor_options: 
+  chunk_output_type: console
+---
+
+
+
+
+# Introduction
+
+Import transcript-level estimates with the tximportData package. 
+
+```{r}
+#source("https://bioconductor.org/biocLite.R")
+#biocLite("EnsDb.Hsapiens.v75")
+
+library(tximport)
+library(readr)
+library(DESeq2)
+library(cowplot)
+library("topGO")
+#library("biomaRt")
+library("clusterProfiler")
+library("org.Hs.eg.db")
+library(tidyverse)
+library(data.table)
+library(plyr)
+library("dplyr")
+
+#create a tx2gene.txt table
+library(EnsDb.Hsapiens.v75)
+edb <- EnsDb.Hsapiens.v75
+
+Tx.ensemble <- transcripts(edb,
+          columns = c("tx_id", "gene_id", "gene_name"),
+          return.type = "DataFrame")
+nrow(Tx.ensemble)
+
+tx2gene<- Tx.ensemble[,c(1:3)]
+head(tx2gene)
+
+tx2gene<- Tx.ensemble[,c(1,3)]
+
+head(tx2gene)
+
+```
+
+# Create a DEseqDataSet from txi count table
+
+```{r}
+# Open file name
+
+clinical_sample_info <- read.csv("~/Dropbox/Lauren Blake/RNA_seq_project/clinical_sample_info.csv", stringsAsFactors = TRUE)
+clinical_sample <- as.data.frame(clinical_sample_info[,2:3], stringsAsFactors = TRUE)
+clinical_sample[,1] <- as.factor(clinical_sample[,1])
+clinical_sample[,2] <- as.factor(clinical_sample[,2])
+
+```
+
+# Check HG38
+
+```{r}
+#source("https://bioconductor.org/biocLite.R")
+#biocLite("EnsDb.Hsapiens.v86")
+
+#create a tx2gene.txt table
+#library(EnsDb.Hsapiens.v86)
+#edb <- EnsDb.Hsapiens.v86
+
+#Tx.ensemble <- transcripts(edb,
+#          columns = c("tx_id", "gene_id", "gene_name"),
+#          return.type = "DataFrame")
+#nrow(Tx.ensemble)
+
+#tx2gene_check<- Tx.ensemble[,c(1:3)]
+#dim(tx2gene_check)
+```
+
+# Import quant.sf data
+
+```{r}
+#quant <- read.delim("../data/quant.sf")
+```
+
+# Run tximport
+
+```{r}
+#samples<- c("trimmed_transcripts_quant_405-BAN22201T1-MH0163673_AATCCAGC_S9_L001_R1_001", "trimmed_transcripts_quant_405-BAN22201T2-MH0163857_CGTCTAAC_S3_L004_R1_001")
+#samples.dir <- c("/Users/laurenblake/Desktop/weight_restoration/weight_restoration/data")
+#salmon.files<- file.path(samples.dir, samples, "quant.sf")
+#names(salmon.files)<- c("405-BAN22201T1-MH0163673_AATCCAGC_S9_L001_R1_001")
+  
+#all(file.exists(salmon.files))
+
+#tx.salmon <- tximport(salmon.files, type = "salmon", tx2gene = tx2gene, dropInfReps=TRUE)
+
+#salmon.counts<- tx.salmon$counts
+#salmon.counts<- as.data.frame(salmon.counts)
+
+```
+
+# Run for all files
+
+```{r}
+#files_list <- read.table("../data/files_list.txt", quote="\"", comment.char="", stringsAsFactors = FALSE)
+#samples<- unlist(files_list)
+#samples<- c("trimmed_transcripts_quant_405-BAN22201T1-MH0163673_AATCCAGC_S9_L001_R1_001", "trimmed_transcripts_quant_405-BAN22201T2-MH0163857_CGTCTAAC_S3_L004_R1_001", "trimmed_transcripts_quant_405-BAN22201T3-MH0167352_CTAAGACC_S31_L004_R1_001", "trimmed_transcripts_quant_405-BAN22202T1-MH0163700_CTTCCTTC_S19_L002_R1_001", "trimmed_transcripts_quant_405-BAN22202T2-MH0164426_GCACACAA_S4_L004_R1_001", "trimmed_transcripts_quant_405-BAN22202T3-MH0167384_ACTCCTAC_S18_L002_R1_001", "trimmed_transcripts_quant_405-BAN22203T1-MH0163897_TCCATTGC_S32_L004_R1_001", "trimmed_transcripts_quant_405-BAN22203T2-MH0164104_CTAAGACC_S21_L003_R1_001", "trimmed_transcripts_quant_405-BAN22204T1-MH0164041_CTTCCTTC_S19_L005_R1_001", "trimmed_transcripts_quant_405-BAN22204T2-MH0165543_CTCCTAGT_S8_L001_R1_001", "trimmed_transcripts_quant_405-BAN22204T3-MH0168921_AACTTGCC_S57_L006_R1_001", "trimmed_transcripts_quant_405-BAN22205T1-MH0164218_CGCTACAT_S7_L004_R1_001", "trimmed_transcripts_quant_405-BAN22205T2-MH0165296_AACTTGCC_S17_L002_R1_001", "trimmed_transcripts_quant_405-BAN22206T1-MH0164595_CGCTACAT_S7_L001_R1_001", "trimmed_transcripts_quant_405-BAN22206T2-MH0165241_GTCGAGAA_S6_L001_R1_001", "trimmed_transcripts_quant_405-BAN22206T3-MH0167362_CTCCTAGT_S68_L008_R1_001", "trimmed_transcripts_quant_405-BAN22207T1-MH0164655_ACAACAGC_S10_L001_R1_001", "trimmed_transcripts_quant_405-BAN22207T2-MH0165541_CCTTAGGT_S22_L003_R1_001", "trimmed_transcripts_quant_405-BAN22207T3-MH0168576_CGCTACAT_S75_L008_R1_001", "trimmed_transcripts_quant_405-BAN22208T1-MH0165002_CTCGAACA_S30_L003_R1_001", "trimmed_transcripts_quant_405-BAN22208T2-MH0165266_ATCGTCTC_S29_L003_R1_001", "trimmed_transcripts_quant_405-BAN22208T3-MH0168126_ACAACAGC_S48_L005_R1_001", "trimmed_transcripts_quant_405-BAN22209T1-MH0165265_AACTCGGA_S2_L004_R1_001", "trimmed_transcripts_quant_405-BAN22209T2-MH0165750_TCTAGGAG_S28_L003_R1_001", "trimmed_transcripts_quant_405-BAN22209T3-MH0168523_CGTCCATT_S16_L005_R1_001", "trimmed_transcripts_quant_405-BAN22210T1-MH0165547_AACCGAAC_S27_L003_R1_001", "trimmed_transcripts_quant_405-BAN22210T2-MH0166544_AACGCCTT_S26_L003_R1_001", "trimmed_transcripts_quant_405-BAN22210T3-MH0168587_CTTCCTTC_S56_L006_R1_001", "trimmed_transcripts_quant_405-BAN22212T1-MH0165601_GCACACAA_S4_L001_R1_001", "trimmed_transcripts_quant_405-BAN22212T2-MH0165753_CGTCCATT_S16_L002_R1_001", "trimmed_transcripts_quant_405-BAN22215T1-MH0165895_GACTACGA_S15_L005_R1_001", "trimmed_transcripts_quant_405-BAN22215T2-MH0166334_AATCCAGC_S9_L004_R1_001", "trimmed_transcripts_quant_405-BAN22215T3-MH0168486_CCTTAGGT_S32_L004_R1_001", "trimmed_transcripts_quant_405-BAN22216T1-MH0165949_CAAGCCAA_S31_L004_R1_001", "trimmed_transcripts_quant_405-BAN22216T2-MH0167360_GACTACGA_S15_L002_R1_001", "trimmed_transcripts_quant_405-BAN22216T3-MH0169379_CGTCTAAC_S47_L005_R1_001", "trimmed_transcripts_quant_405-BAN22218T1-MH0166539_GTACACCT_S14_L002_R1_001", "trimmed_transcripts_quant_405-BAN22218T2-MH0167895_CGACCTAA_S13_L002_R1_001", "trimmed_transcripts_quant_405-BAN22218T3-MH0169739_AATCCAGC_S14_L002_R1_001", "trimmed_transcripts_quant_405-BAN22219T1-MH0167403_CGTCTAAC_S3_L001_R1_001", "trimmed_transcripts_quant_405-BAN22219T2-MH0168012_ACTCCTAC_S18_L005_R1_001", "trimmed_transcripts_quant_405-BAN22219T3-MH0170053_CGTCCATT_S55_L006_R1_001", "trimmed_transcripts_quant_405-BAN22220T1-MH0167615_CCTATACC_S25_L003_R1_001", "trimmed_transcripts_quant_405-BAN22220T2-MH0168005_CCAACACT_S24_L003_R1_001", "trimmed_transcripts_quant_405-BAN22220T3-MH0169956_AACTCGGA_S2_L001_R1_001", "trimmed_transcripts_quant_405-BAN22221T1-MH0168112_ACCATCCT_S11_L005_R1_001", "trimmed_transcripts_quant_405-BAN22221T2-MH0168529_TACATCGG_S33_L004_R1_001", "trimmed_transcripts_quant_405-BAN22221T3-MH0171129_GTCGAGAA_S46_L005_R1_001", "trimmed_transcripts_quant_405-BAN22222T1-MH0168671_CTAAGACC_S21_L006_R1_001", "trimmed_transcripts_quant_405-BAN22222T2-MH0169515_TCTTCGAC_S74_L008_R1_001", "trimmed_transcripts_quant_405-BAN22224T1-MH0169098_CTTCCTTC_S73_L008_R1_001", "trimmed_transcripts_quant_405-BAN22224T2-MH0169571_GACTACGA_S21_L003_R1_001", "trimmed_transcripts_quant_405-BAN22224T3-MH0172869_AACCGAAC_S34_L004_R1_001", "trimmed_transcripts_quant_405-BAN22226T1-MH0169516_AACTTGCC_S22_L003_R1_001", "trimmed_transcripts_quant_405-BAN22226T2-MH0170691_ACGAGAAC_S23_L003_R1_001", "trimmed_transcripts_quant_405-BAN22226T3-MH0173165_GCACACAA_S24_L003_R1_001", "trimmed_transcripts_quant_405-BAN22228T1-MH0169654_CGTCCATT_S29_L003_R1_001", "trimmed_transcripts_quant_405-BAN22228T2-MH0171900_ATGACAGG_S28_L003_R1_001", "trimmed_transcripts_quant_405-BAN22228T3-MH0174229_ACCATCCT_S27_L003_R1_001", "trimmed_transcripts_quant_405-BAN22229T1-MH0170475_CTCCTAGT_S26_L003_R1_001", "trimmed_transcripts_quant_405-BAN22229T2-MH0171083_GTCGAGAA_S13_L002_R1_001", "trimmed_transcripts_quant_405-BAN22232T1-MH0171809_AACTCGGA_S76_L008_R1_001", "trimmed_transcripts_quant_405-BAN22232T2-MH0171901_GACTACGA_S15_L008_R1_001", "trimmed_transcripts_quant_405-BAN22232T3-MH0174220_ATCGTCTC_S71_L008_R1_001", "trimmed_transcripts_quant_405-BAN22233T1-MH0171922_GTACACCT_S4_L001_R1_001", "trimmed_transcripts_quant_405-BAN22233T2-MH0172715_GTACACCT_S30_L003_R1_001", "trimmed_transcripts_quant_405-BAN22233T3-MH0175373_ACGGACTT_S35_L004_R1_001", "trimmed_transcripts_quant_405-BAN22234T1-MH0172376_ACAACAGC_S10_L007_R1_001", "trimmed_transcripts_quant_405-BAN22234T2-MH0174414_CGCTACAT_S12_L002_R1_001", "trimmed_transcripts_quant_405-BAN22234T3-MH0177050_AACTCGGA_S49_L005_R1_001", "trimmed_transcripts_quant_405-BAN22235T1-MH0172813_TCCATTGC_S11_L002_R1_001", "trimmed_transcripts_quant_405-BAN22235T2-MH0173158_CGTCTAAC_S70_L008_R1_001", "trimmed_transcripts_quant_405-BAN22235T3-MH0175276_AACGCCTT_S36_L004_R1_001", "trimmed_transcripts_quant_405-BAN22236T1-MH0173201_CGACCTAA_S37_L004_R1_001", "trimmed_transcripts_quant_405-BAN22236T2-MH0174188_ACAACAGC_S15_L002_R1_001", "trimmed_transcripts_quant_405-BAN22239T1-MH0174265_ACTCCTAC_S25_L003_R1_001", "trimmed_transcripts_quant_405-BAN22239T2-MH0174778_TACATCGG_S12_L002_R1_001", "trimmed_transcripts_quant_405-BAN22239T3-MH0178097_CCTATACC_S38_L004_R1_001", "trimmed_transcripts_quant_405-BAN22240T1-MH0174969_CGCTACAT_S7_L007_R1_001", "trimmed_transcripts_quant_405-BAN22240T2-MH0175802_AACTTGCC_S17_L008_R1_001", "trimmed_transcripts_quant_405-BAN22242T1-MH0175396_ATGACAGG_S5_L008_R1_001", "trimmed_transcripts_quant_405-BAN22242T2-MH0177006_ACTCCTAC_S18_L008_R1_001", "trimmed_transcripts_quant_405-BAN22242T3-MH0181773_CAAGCCAA_S44_L005_R1_001", "trimmed_transcripts_quant_405-BAN22243T1-MH0175481_CCTATACC_S20_L002_R1_001", "trimmed_transcripts_quant_405-BAN22243T2-MH0176559_ACGGACTT_S3_L001_R1_001", "trimmed_transcripts_quant_405-BAN22243T3-MH0179740_TCTAGGAG_S39_L004_R1_001", "trimmed_transcripts_quant_405-BAN22245T1-MH0177498_ATGACAGG_S5_L004_R1_001", "trimmed_transcripts_quant_405-BAN22245T2-MH0179482_CAAGCCAA_S31_L007_R1_001", "trimmed_transcripts_quant_405-BAN22247T1-MH0178383_TCTTCGAC_S1_L001_R1_001", "trimmed_transcripts_quant_405-BAN22247T2-MH0179693_ACCATCCT_S11_L002_R1_001", "trimmed_transcripts_quant_405-BAN22248T1-MH0179252_CCAACACT_S24_L006_R1_001", "trimmed_transcripts_quant_405-BAN22248T2-MH0179936_ACGGACTT_S23_L003_R1_001", "trimmed_transcripts_quant_405-BAN22248T3-MH0184420_CCAACACT_S69_L008_R1_001", "trimmed_transcripts_quant_405-BAN22249T1-MH0179995_TCTTCGAC_S1_L005_R1_001", "trimmed_transcripts_quant_405-BAN22249T2-MH0180995_CTCGAACA_S2_L001_R1_001", "trimmed_transcripts_quant_405-BAN22250T1-MH0180438_GTCGAGAA_S6_L004_R1_001", "trimmed_transcripts_quant_405-BAN22250T2-MH0181264_GCACACAA_S4_L008_R1_001", "trimmed_transcripts_quant_405-BAN22251T1-MH0181000_AACTCGGA_S2_L007_R1_001", "trimmed_transcripts_quant_405-BAN22251T2-MH0181244_CTCGAACA_S30_L006_R1_001", "trimmed_transcripts_quant_405-BAN22252T1-MH0181193_AACCGAAC_S19_L002_R1_001", "trimmed_transcripts_quant_405-BAN22252T2-MH0181540_ATGACAGG_S5_L001_R1_001", "trimmed_transcripts_quant_405-BAN22253T1-MH0181369_TACATCGG_S1_L001_R1_001", "trimmed_transcripts_quant_405-BAN22253T2-MH0183318_CTCCTAGT_S8_L005_R1_001", "trimmed_transcripts_quant_405-BAN22254T1-MH0183287_CCAACACT_S10_L001_R1_001", "trimmed_transcripts_quant_405-BAN22254T2-MH0183347_CCTTAGGT_S22_L006_R1_001", "trimmed_transcripts_quant_405-BAN22254T3-MH0186085_AATCCAGC_S72_L008_R1_001", "trimmed_transcripts_quant_405-BAN22255T1-MH0186017_CCTTAGGT_S18_L002_R1_001", "trimmed_transcripts_quant_405-BAN22255T2-MH0186145_GTCGAGAA_S6_L007_R1_001", "trimmed_transcripts_quant_405-BAN22256T1-MH0186190_ACGAGAAC_S20_L005_R1_001", "trimmed_transcripts_quant_405-BAN22256T2-MH0186757_CGTCCATT_S16_L008_R1_001", "trimmed_transcripts_quant_405-BAN22256T3-MH0192924_TCCATTGC_S43_L005_R1_001", "trimmed_transcripts_quant_405-BAN22257T1-MH0186793_CTCCTAGT_S8_L008_R1_001", "trimmed_transcripts_quant_405-BAN22257T2-MH0187462_TCCATTGC_S32_L007_R1_001", "trimmed_transcripts_quant_405-BAN22258T1-MH0187064_AATCCAGC_S9_L007_R1_001", "trimmed_transcripts_quant_405-BAN22258T2-MH0187605_CTAAGACC_S6_L001_R1_001", "trimmed_transcripts_quant_405-BAN22258T3-MH0198483_ACCATCCT_S54_L006_R1_001", "trimmed_transcripts_quant_405-BAN22260T1-MH0187236_GTACACCT_S14_L005_R1_001", "trimmed_transcripts_quant_405-BAN22260T2-MH0188240_CTTCCTTC_S19_L008_R1_001", "trimmed_transcripts_quant_405-BAN22260T3-MH0198647_ATGACAGG_S42_L005_R1_001", "trimmed_transcripts_quant_405-BAN22261T1-MH0188182_ACGGACTT_S23_L006_R1_001", "trimmed_transcripts_quant_405-BAN22261T2-MH0191258_CGACCTAA_S7_L001_R1_001", "trimmed_transcripts_quant_405-BAN22262T1-MH0188248_TCTTCGAC_S1_L008_R1_001", "trimmed_transcripts_quant_405-BAN22262T2-MH0191318_CCTATACC_S25_L007_R1_001", "trimmed_transcripts_quant_405-BAN22266T1-MH0192891_ACAACAGC_S10_L004_R1_001", "trimmed_transcripts_quant_405-BAN22266T2-MH0197478_ACGAGAAC_S20_L002_R1_001", "trimmed_transcripts_quant_405-BAN22266T3-MH0201141_GACTACGA_S53_L006_R1_001", "trimmed_transcripts_quant_405-BAN22267T1-MH0197522_AACTTGCC_S17_L005_R1_001", "trimmed_transcripts_quant_405-BAN22267T2-MH0197979_ATCGTCTC_S29_L006_R1_001", "trimmed_transcripts_quant_405-BAN22268T1-MH0197785_TCTAGGAG_S28_L006_R1_001", "trimmed_transcripts_quant_405-BAN22268T2-MH0197998_CGACCTAA_S13_L006_R1_001", "trimmed_transcripts_quant_405-BAN22268T3-MH0203576_ACTCCTAC_S52_L006_R1_001", "trimmed_transcripts_quant_405-BAN22269T1-MH0197823_CGTCTAAC_S3_L007_R1_001", "trimmed_transcripts_quant_405-BAN22269T2-MH0197945_ATCGTCTC_S8_L001_R1_001", "trimmed_transcripts_quant_405-BAN22270T1-MH0199425_CAAGCCAA_S17_L002_R1_001", "trimmed_transcripts_quant_405-BAN22270T2-MH0199506_ACCATCCT_S11_L008_R1_001", "trimmed_transcripts_quant_405-BAN22271T1-MH0200966_AACGCCTT_S26_L007_R1_001", "trimmed_transcripts_quant_405-BAN22271T2-MH0201765_AACCGAAC_S27_L006_R1_001", "trimmed_transcripts_quant_405-BAN22271T3-MH0217142_CTCGAACA_S40_L004_R1_001", "trimmed_transcripts_quant_405-BAN22272T1-MH0201784_TACATCGG_S12_L006_R1_001", "trimmed_transcripts_quant_405-BAN22272T2-MH0202184_AACGCCTT_S16_L002_R1_001", "trimmed_transcripts_quant_405-BAN22272T3-MH0217144_GCACACAA_S41_L005_R1_001", "trimmed_transcripts_quant_405-BAN22274T1-MH0201904_TCTAGGAG_S9_L001_R1_001", "trimmed_transcripts_quant_405-BAN22274T2-MH0202323_ACGAGAAC_S5_L001_R1_001", "trimmed_transcripts_quant_405-BAN22274T3-MH0217163_TCTTCGAC_S45_L005_R1_001", "trimmed_transcripts_quant_BAK_BSP_001-BAN22202_RRED397T1_GTACACCT_S51_L006_R1_001", "trimmed_transcripts_quant_BAK_BSP_002-BAN22202_RRED397T2_ACGAGAAC_S50_L006_R1_001", "trimmed_transcripts_quant_BAK_BSP_003-BAN22220_RRED398T1_CGACCTAA_S58_L006_R1_001", "trimmed_transcripts_quant_BAK_BSP_004-BAN22220_RRED398T2_TACATCGG_S59_L007_R1_001", "trimmed_transcripts_quant_BAK_BSP_005-BAN22209_RRED399T1_ATCGTCTC_S60_L007_R1_001", "trimmed_transcripts_quant_BAK_BSP_006-BAN22209_RRED399T2_CCAACACT_S67_L007_R1_001", "trimmed_transcripts_quant_BAK_BSP_007-BAN22218_RRED424T1_TCTAGGAG_S66_L007_R1_001", "trimmed_transcripts_quant_BAK_BSP_008-BAN22218_RRED424T2_CTCGAACA_S65_L007_R1_001", "trimmed_transcripts_quant_BAK_BSP_009-BAN22226_RRED453T1_ACGGACTT_S64_L007_R1_001", "trimmed_transcripts_quant_BAK_BSP_010-BAN22226_RRED453T2_CTAAGACC_S63_L007_R1_001", "trimmed_transcripts_quant_BAK_BSP_011-BAN22228_RRED467T1_AACCGAAC_S62_L007_R1_001", "trimmed_transcripts_quant_BAK_BSP_012-BAN22228_RRED467T2_CCTTAGGT_S61_L007_R1_001")
+
+samples<- c("405-BAN22201T1-MH0163673_AATCCAGC_S9_L001_R1_001",
+"405-BAN22201T2-MH0163857_CGTCTAAC_S3_L004_R1_001",
+"405-BAN22201T3-MH0167352_CTAAGACC_S31_L004_R1_001",
+"405-BAN22202T1-MH0163700_CTTCCTTC_S19_L002_R1_001",
+"405-BAN22202T2-MH0164426_GCACACAA_S4_L004_R1_001",
+"405-BAN22202T3-MH0167384_ACTCCTAC_S18_L002_R1_001",
+"405-BAN22203T1-MH0163897_TCCATTGC_S32_L004_R1_001",
+"405-BAN22203T2-MH0164104_CTAAGACC_S21_L003_R1_001",
+"405-BAN22204T1-MH0164041_CTTCCTTC_S19_L005_R1_001",
+"405-BAN22204T2-MH0165543_CTCCTAGT_S8_L001_R1_001",
+"405-BAN22204T3-MH0168921_AACTTGCC_S57_L006_R1_001",
+"405-BAN22205T1-MH0164218_CGCTACAT_S7_L004_R1_001",
+"405-BAN22205T2-MH0165296_AACTTGCC_S17_L002_R1_001",
+"405-BAN22206T1-MH0164595_CGCTACAT_S7_L001_R1_001",
+"405-BAN22206T2-MH0165241_GTCGAGAA_S6_L001_R1_001",
+"405-BAN22206T3-MH0167362_CTCCTAGT_S68_L008_R1_001",
+"405-BAN22207T1-MH0164655_ACAACAGC_S10_L001_R1_001",
+"405-BAN22207T2-MH0165541_CCTTAGGT_S22_L003_R1_001",
+"405-BAN22207T3-MH0168576_CGCTACAT_S75_L008_R1_001",
+"405-BAN22208T1-MH0165002_CTCGAACA_S30_L003_R1_001",
+"405-BAN22208T2-MH0165266_ATCGTCTC_S29_L003_R1_001",
+"405-BAN22208T3-MH0168126_ACAACAGC_S48_L005_R1_001",
+"405-BAN22209T1-MH0165265_AACTCGGA_S2_L004_R1_001",
+"405-BAN22209T2-MH0165750_TCTAGGAG_S28_L003_R1_001",
+"405-BAN22209T3-MH0168523_CGTCCATT_S16_L005_R1_001",
+"405-BAN22210T1-MH0165547_AACCGAAC_S27_L003_R1_001",
+"405-BAN22210T2-MH0166544_AACGCCTT_S26_L003_R1_001",
+"405-BAN22210T3-MH0168587_CTTCCTTC_S56_L006_R1_001",
+"405-BAN22212T1-MH0165601_GCACACAA_S4_L001_R1_001",
+"405-BAN22212T2-MH0165753_CGTCCATT_S16_L002_R1_001",
+"405-BAN22215T1-MH0165895_GACTACGA_S15_L005_R1_001",
+"405-BAN22215T2-MH0166334_AATCCAGC_S9_L004_R1_001",
+"405-BAN22215T3-MH0168486_CCTTAGGT_S32_L004_R1_001",
+"405-BAN22216T1-MH0165949_CAAGCCAA_S31_L004_R1_001",
+"405-BAN22216T2-MH0167360_GACTACGA_S15_L002_R1_001",
+"405-BAN22216T3-MH0169379_CGTCTAAC_S47_L005_R1_001",
+"405-BAN22218T1-MH0166539_GTACACCT_S14_L002_R1_001",
+"405-BAN22218T2-MH0167895_CGACCTAA_S13_L002_R1_001",
+"405-BAN22218T3-MH0169739_AATCCAGC_S14_L002_R1_001",
+"405-BAN22219T1-MH0167403_CGTCTAAC_S3_L001_R1_001",
+"405-BAN22219T2-MH0168012_ACTCCTAC_S18_L005_R1_001",
+"405-BAN22219T3-MH0170053_CGTCCATT_S55_L006_R1_001",
+"405-BAN22220T1-MH0167615_CCTATACC_S25_L003_R1_001",
+"405-BAN22220T2-MH0168005_CCAACACT_S24_L003_R1_001",
+"405-BAN22220T3-MH0169956_AACTCGGA_S2_L001_R1_001",
+"405-BAN22221T1-MH0168112_ACCATCCT_S11_L005_R1_001",
+"405-BAN22221T2-MH0168529_TACATCGG_S33_L004_R1_001",
+"405-BAN22221T3-MH0171129_GTCGAGAA_S46_L005_R1_001",
+"405-BAN22222T1-MH0168671_CTAAGACC_S21_L006_R1_001",
+"405-BAN22222T2-MH0169515_TCTTCGAC_S74_L008_R1_001",
+"405-BAN22224T1-MH0169098_CTTCCTTC_S73_L008_R1_001",
+"405-BAN22224T2-MH0169571_GACTACGA_S21_L003_R1_001",
+"405-BAN22224T3-MH0172869_AACCGAAC_S34_L004_R1_001",
+"405-BAN22226T1-MH0169516_AACTTGCC_S22_L003_R1_001",
+"405-BAN22226T2-MH0170691_ACGAGAAC_S23_L003_R1_001",
+"405-BAN22226T3-MH0173165_GCACACAA_S24_L003_R1_001",
+"405-BAN22228T1-MH0169654_CGTCCATT_S29_L003_R1_001",
+"405-BAN22228T2-MH0171900_ATGACAGG_S28_L003_R1_001",
+"405-BAN22228T3-MH0174229_ACCATCCT_S27_L003_R1_001",
+"405-BAN22229T1-MH0170475_CTCCTAGT_S26_L003_R1_001",
+"405-BAN22229T2-MH0171083_GTCGAGAA_S13_L002_R1_001",
+"405-BAN22232T1-MH0171809_AACTCGGA_S76_L008_R1_001",
+"405-BAN22232T2-MH0171901_GACTACGA_S15_L008_R1_001",
+"405-BAN22232T3-MH0174220_ATCGTCTC_S71_L008_R1_001",
+"405-BAN22233T1-MH0171922_GTACACCT_S4_L001_R1_001",
+"405-BAN22233T2-MH0172715_GTACACCT_S30_L003_R1_001",
+"405-BAN22233T3-MH0175373_ACGGACTT_S35_L004_R1_001",
+"405-BAN22234T1-MH0172376_ACAACAGC_S10_L007_R1_001",
+"405-BAN22234T2-MH0174414_CGCTACAT_S12_L002_R1_001",
+"405-BAN22234T3-MH0177050_AACTCGGA_S49_L005_R1_001",
+"405-BAN22235T1-MH0172813_TCCATTGC_S11_L002_R1_001",
+"405-BAN22235T2-MH0173158_CGTCTAAC_S70_L008_R1_001",
+"405-BAN22235T3-MH0175276_AACGCCTT_S36_L004_R1_001",
+"405-BAN22236T1-MH0173201_CGACCTAA_S37_L004_R1_001",
+"405-BAN22236T2-MH0174188_ACAACAGC_S15_L002_R1_001",
+"405-BAN22239T1-MH0174265_ACTCCTAC_S25_L003_R1_001",
+"405-BAN22239T2-MH0174778_TACATCGG_S12_L002_R1_001",
+"405-BAN22239T3-MH0178097_CCTATACC_S38_L004_R1_001",
+"405-BAN22240T1-MH0174969_CGCTACAT_S7_L007_R1_001",
+"405-BAN22240T2-MH0175802_AACTTGCC_S17_L008_R1_001",
+"405-BAN22242T1-MH0175396_ATGACAGG_S5_L008_R1_001",
+"405-BAN22242T2-MH0177006_ACTCCTAC_S18_L008_R1_001",
+"405-BAN22242T3-MH0181773_CAAGCCAA_S44_L005_R1_001",
+"405-BAN22243T1-MH0175481_CCTATACC_S20_L002_R1_001",
+"405-BAN22243T2-MH0176559_ACGGACTT_S3_L001_R1_001",
+"405-BAN22243T3-MH0179740_TCTAGGAG_S39_L004_R1_001",
+"405-BAN22245T1-MH0177498_ATGACAGG_S5_L004_R1_001",
+"405-BAN22245T2-MH0179482_CAAGCCAA_S31_L007_R1_001",
+"405-BAN22247T1-MH0178383_TCTTCGAC_S1_L001_R1_001",
+"405-BAN22247T2-MH0179693_ACCATCCT_S11_L002_R1_001",
+"405-BAN22248T1-MH0179252_CCAACACT_S24_L006_R1_001",
+"405-BAN22248T2-MH0179936_ACGGACTT_S23_L003_R1_001",
+"405-BAN22248T3-MH0184420_CCAACACT_S69_L008_R1_001",
+"405-BAN22249T1-MH0179995_TCTTCGAC_S1_L005_R1_001",
+"405-BAN22249T2-MH0180995_CTCGAACA_S2_L001_R1_001",
+"405-BAN22250T1-MH0180438_GTCGAGAA_S6_L004_R1_001",
+"405-BAN22250T2-MH0181264_GCACACAA_S4_L008_R1_001",
+"405-BAN22251T1-MH0181000_AACTCGGA_S2_L007_R1_001",
+"405-BAN22251T2-MH0181244_CTCGAACA_S30_L006_R1_001",
+"405-BAN22252T1-MH0181193_AACCGAAC_S19_L002_R1_001",
+"405-BAN22252T2-MH0181540_ATGACAGG_S5_L001_R1_001",
+"405-BAN22253T1-MH0181369_TACATCGG_S1_L001_R1_001",
+"405-BAN22253T2-MH0183318_CTCCTAGT_S8_L005_R1_001",
+"405-BAN22254T1-MH0183287_CCAACACT_S10_L001_R1_001",
+"405-BAN22254T2-MH0183347_CCTTAGGT_S22_L006_R1_001",
+"405-BAN22254T3-MH0186085_AATCCAGC_S72_L008_R1_001",
+"405-BAN22255T1-MH0186017_CCTTAGGT_S18_L002_R1_001",
+"405-BAN22255T2-MH0186145_GTCGAGAA_S6_L007_R1_001",
+"405-BAN22256T1-MH0186190_ACGAGAAC_S20_L005_R1_001",
+"405-BAN22256T2-MH0186757_CGTCCATT_S16_L008_R1_001",
+"405-BAN22256T3-MH0192924_TCCATTGC_S43_L005_R1_001",
+"405-BAN22257T1-MH0186793_CTCCTAGT_S8_L008_R1_001",
+"405-BAN22257T2-MH0187462_TCCATTGC_S32_L007_R1_001",
+"405-BAN22258T1-MH0187064_AATCCAGC_S9_L007_R1_001",
+"405-BAN22258T2-MH0187605_CTAAGACC_S6_L001_R1_001",
+"405-BAN22258T3-MH0198483_ACCATCCT_S54_L006_R1_001",
+"405-BAN22260T1-MH0187236_GTACACCT_S14_L005_R1_001",
+"405-BAN22260T2-MH0188240_CTTCCTTC_S19_L008_R1_001",
+"405-BAN22260T3-MH0198647_ATGACAGG_S42_L005_R1_001",
+"405-BAN22261T1-MH0188182_ACGGACTT_S23_L006_R1_001",
+"405-BAN22261T2-MH0191258_CGACCTAA_S7_L001_R1_001",
+"405-BAN22262T1-MH0188248_TCTTCGAC_S1_L008_R1_001",
+"405-BAN22262T2-MH0191318_CCTATACC_S25_L007_R1_001",
+"405-BAN22266T1-MH0192891_ACAACAGC_S10_L004_R1_001",
+"405-BAN22266T2-MH0197478_ACGAGAAC_S20_L002_R1_001",
+"405-BAN22266T3-MH0201141_GACTACGA_S53_L006_R1_001",
+"405-BAN22267T1-MH0197522_AACTTGCC_S17_L005_R1_001",
+"405-BAN22267T2-MH0197979_ATCGTCTC_S29_L006_R1_001",
+"405-BAN22268T1-MH0197785_TCTAGGAG_S28_L006_R1_001",
+"405-BAN22268T2-MH0197998_CGACCTAA_S13_L006_R1_001",
+"405-BAN22268T3-MH0203576_ACTCCTAC_S52_L006_R1_001",
+"405-BAN22269T1-MH0197823_CGTCTAAC_S3_L007_R1_001",
+"405-BAN22269T2-MH0197945_ATCGTCTC_S8_L001_R1_001",
+"405-BAN22270T1-MH0199425_CAAGCCAA_S17_L002_R1_001",
+"405-BAN22270T2-MH0199506_ACCATCCT_S11_L008_R1_001",
+"405-BAN22271T1-MH0200966_AACGCCTT_S26_L007_R1_001",
+"405-BAN22271T2-MH0201765_AACCGAAC_S27_L006_R1_001",
+"405-BAN22271T3-MH0217142_CTCGAACA_S40_L004_R1_001",
+"405-BAN22272T1-MH0201784_TACATCGG_S12_L006_R1_001",
+"405-BAN22272T2-MH0202184_AACGCCTT_S16_L002_R1_001",
+"405-BAN22272T3-MH0217144_GCACACAA_S41_L005_R1_001",
+"405-BAN22274T1-MH0201904_TCTAGGAG_S9_L001_R1_001",
+"405-BAN22274T2-MH0202323_ACGAGAAC_S5_L001_R1_001",
+"405-BAN22274T3-MH0217163_TCTTCGAC_S45_L005_R1_001",
+"BAK_BSP_001-BAN22202_RRED397T1_GTACACCT_S51_L006_R1_001",
+"BAK_BSP_002-BAN22202_RRED397T2_ACGAGAAC_S50_L006_R1_001",
+"BAK_BSP_003-BAN22220_RRED398T1_CGACCTAA_S58_L006_R1_001",
+"BAK_BSP_004-BAN22220_RRED398T2_TACATCGG_S59_L007_R1_001",
+"BAK_BSP_005-BAN22209_RRED399T1_ATCGTCTC_S60_L007_R1_001",
+"BAK_BSP_006-BAN22209_RRED399T2_CCAACACT_S67_L007_R1_001",
+"BAK_BSP_007-BAN22218_RRED424T1_TCTAGGAG_S66_L007_R1_001",
+"BAK_BSP_008-BAN22218_RRED424T2_CTCGAACA_S65_L007_R1_001",
+"BAK_BSP_009-BAN22226_RRED453T1_ACGGACTT_S64_L007_R1_001",
+"BAK_BSP_010-BAN22226_RRED453T2_CTAAGACC_S63_L007_R1_001",
+"BAK_BSP_011-BAN22228_RRED467T1_AACCGAAC_S62_L007_R1_001",
+"BAK_BSP_012-BAN22228_RRED467T2_CCTTAGGT_S61_L007_R1_001")
+
+samples.dir <- c("/Users/laurenblake/Desktop/weight_restoration/weight_restoration/data")
+salmon.files<- file.path(samples.dir, samples, "quant.sf")
+names(salmon.files)<-samples<- c("BAN22201T1",
+"BAN22201T2",
+"BAN22201T3",
+"BAN22202T1",
+"BAN22202T2",
+"BAN22202T3",
+"BAN22203T1",
+"BAN22203T2",
+"BAN22204T1",
+"BAN22204T2",
+"BAN22204T3",
+"BAN22205T1",
+"BAN22205T2",
+"BAN22206T1",
+"BAN22206T2",
+"BAN22206T3",
+"BAN22207T1",
+"BAN22207T2",
+"BAN22207T3",
+"BAN22208T1",
+"BAN22208T2",
+"BAN22208T3",
+"BAN22209T1",
+"BAN22209T2",
+"BAN22209T3",
+"BAN22210T1",
+"BAN22210T2",
+"BAN22210T3",
+"BAN22212T1",
+"BAN22212T2",
+"BAN22215T1",
+"BAN22215T2",
+"BAN22215T3",
+"BAN22216T1",
+"BAN22216T2",
+"BAN22216T3",
+"BAN22218T1",
+"BAN22218T2",
+"BAN22218T3",
+"BAN22219T1",
+"BAN22219T2",
+"BAN22219T3",
+"BAN22220T1",
+"BAN22220T2",
+"BAN22220T3",
+"BAN22221T1",
+"BAN22221T2",
+"BAN22221T3",
+"BAN22222T1",
+"BAN22222T2",
+"BAN22224T1",
+"BAN22224T2",
+"BAN22224T3",
+"BAN22226T1",
+"BAN22226T2",
+"BAN22226T3",
+"BAN22228T1",
+"BAN22228T2",
+"BAN22228T3",
+"BAN22229T1",
+"BAN22229T2",
+"BAN22232T1",
+"BAN22232T2",
+"BAN22232T3",
+"BAN22233T1",
+"BAN22233T2",
+"BAN22233T3",
+"BAN22234T1",
+"BAN22234T2",
+"BAN22234T3",
+"BAN22235T1",
+"BAN22235T2",
+"BAN22235T3",
+"BAN22236T1",
+"BAN22236T2",
+"BAN22239T1",
+"BAN22239T2",
+"BAN22239T3",
+"BAN22240T1",
+"BAN22240T2",
+"BAN22242T1",
+"BAN22242T2",
+"BAN22242T3",
+"BAN22243T1",
+"BAN22243T2",
+"BAN22243T3",
+"BAN22245T1",
+"BAN22245T2",
+"BAN22247T1",
+"BAN22247T2",
+"BAN22248T1",
+"BAN22248T2",
+"BAN22248T3",
+"BAN22249T1",
+"BAN22249T2",
+"BAN22250T1",
+"BAN22250T2",
+"BAN22251T1",
+"BAN22251T2",
+"BAN22252T1",
+"BAN22252T2",
+"BAN22253T1",
+"BAN22253T2",
+"BAN22254T1",
+"BAN22254T2",
+"BAN22254T3",
+"BAN22255T1",
+"BAN22255T2",
+"BAN22256T1",
+"BAN22256T2",
+"BAN22256T3",
+"BAN22257T1",
+"BAN22257T2",
+"BAN22258T1",
+"BAN22258T2",
+"BAN22258T3",
+"BAN22260T1",
+"BAN22260T2",
+"BAN22260T3",
+"BAN22261T1",
+"BAN22261T2",
+"BAN22262T1",
+"BAN22262T2",
+"BAN22266T1",
+"BAN22266T2",
+"BAN22266T3",
+"BAN22267T1",
+"BAN22267T2",
+"BAN22268T1",
+"BAN22268T2",
+"BAN22268T3",
+"BAN22269T1",
+"BAN22269T2",
+"BAN22270T1",
+"BAN22270T2",
+"BAN22271T1",
+"BAN22271T2",
+"BAN22271T3",
+"BAN22272T1",
+"BAN22272T2",
+"BAN22272T3",
+"BAN22274T1",
+"BAN22274T2",
+"BAN22274T3",
+"BAN22202_RRED397T1",
+"BAN22202_RRED397T2",
+"BAN22220_RRED398T1",
+"BAN22220_RRED398T2",
+"BAN22209_RRED399T1",
+"BAN22209_RRED399T2",
+"BAN22218_RRED424T1",
+"BAN22218_RRED424T2",
+"BAN22226_RRED453T1",
+"BAN22226_RRED453T2",
+"BAN22228_RRED467T1",
+"BAN22228_RRED467T2")
+
+  
+all(file.exists(salmon.files))
+
+
+ #tx2gene <-  tx2gene[which( tx2gene$gene_name != "HBB" ),]
+ #tx2gene <-  tx2gene[which( tx2gene$gene_name != "HBA2" ),]
+ #tx2gene <-  tx2gene[which( tx2gene$gene_name != "HBA1" ),]
+
+ 
+tx.salmon <- tximport(salmon.files, type = "salmon", tx2gene = tx2gene, dropInfReps=TRUE)
+
+
+
+salmon.counts<- tx.salmon$counts
+salmon.counts<- as.data.frame(salmon.counts)
+check <- salmon.counts[which(rownames(salmon.counts) == "HBB"),]
+
+salmon_counts <- as.data.frame(tx.salmon$counts)
+plot(rowSums(salmon_counts))
+
+plot(rowSums(salmon_counts), pch = 19, ylab = "Sum of estimated raw reads across all samples", xlab = " ", ylim=c(0, 303921608), main = "Sum of estimated read counts for each gene (all samples)") 
+
+salmon_counts1 <-  salmon_counts[which( rownames(salmon_counts) != "HBB" ),]
+salmon_counts1 <-  salmon_counts1[which( rownames(salmon_counts) != "HBA2" ),]
+salmon_counts1 <-  salmon_counts1[which( rownames(salmon_counts) != "HBA1" ),]
+
+plot(rowSums(salmon_counts1), ylab = "Sum of estimated raw reads across all samples", xlab = " ", ylim=c(0, 303921608)) 
+
+
+salmon.counts.hbb <- salmon.counts[which(rownames(salmon.counts) == "HBB"),]
+salmon.counts.hba1 <- salmon.counts[which(rownames(salmon.counts) == "HBA1"),]
+salmon.counts.hba2 <- salmon.counts[which(rownames(salmon.counts) == "HBA2"),]
+
+
+# HBB ENSG00000188170
+# HBA2 ENSG00000188536
+# HBA1 ENSG00000206172
+```
+
+# Remove HBA then run VSD
+
+```{r}
+# Remove 
+# HBB ENSG00000188170
+# HBA2 ENSG00000188536
+# HBA1 ENSG00000206172
+
+
+
+
+dds <- DESeqDataSetFromTximport(tx.salmon, colData=clinical_sample, design = ~ BAN_ID + Time)
+
+dds <- dds[which(rownames(dds) != "HBB" ),]
+dds <- dds[which(rownames(dds) != "HBA2" ),]
+dds <- dds[which(rownames(dds) != "HBA1" ),]
+
+vsd <- vst(dds, blind = TRUE)
+
+
+
+X = t(scale(t(assay(vsd)),center=TRUE,scale=FALSE))
+sv = svd(t(X))
+U = sv$u
+V = sv$v
+D = sv$d
+## in R calculate the rank of a matrix is by
+#qr(t(X))$rank
+
+plot(U[,1],U[,2],xlab="PC1",ylab="PC2")
+
+
+
+cbPalette <- c("#009E73", "#E69F00", "#999999", "black", "#56B4E9")
+
+group.colors <- c("1" = "#333BFF", "2" = "#CC6600", "3" ="#9633FF", "4" = "#E2FF33", "5" = "#E3DB71")
+
+
+U <- as.data.frame(U)
+norm_count <- ggplot(data=U, aes(x=U[,1], y=U[,2], color=factor(dds$Time))) + geom_point() + scale_color_discrete(name = "Time") + xlab("PC1 (14% of variation explained)") + ylab("PC2 (8% of variation explained)") +  scale_colour_manual(name = "Time", values=c("#F8766D", "#B79F00", "#00BA38", "#3399FF", "#CC66FF"))
+
+
+plot_grid(norm_count)
+
+save_plot("/Users/laurenblake/Dropbox/Figures/PCA_time_no_globin.png", norm_count,
+          base_aspect_ratio = 1, base_width = 6.95, base_height = 5.25)
+
+
+U <- as.data.frame(U)
+norm_count <- ggplot(data=U, aes(x=U[,1], y=U[,2], color=factor(dds$Time))) + geom_point() + scale_color_discrete(name = "Time") + xlab("PC1 (14% of variation explained)") + ylab("PC2 (8% of variation explained)") +  scale_colour_manual(name = "Time", values=c("#FFFFFF", "#FFFFFF", "#FFFFFF",  "#3399FF", "#CC66FF"))
+
+
+plot_grid(norm_count)
+
+save_plot("/Users/laurenblake/Dropbox/Figures/PCA_time_no_globin_T5.png", norm_count,
+          base_aspect_ratio = 1, base_width = 6.95, base_height = 5.25)
+
+summary(lm(U[,1]~as.factor(dds$BAN_ID)))
+summary(lm(U[,2]~as.factor(dds$BAN_ID)))
+
+summary(lm(U[,1]~as.factor(dds$Time)))
+summary(lm(U[,2]~as.factor(dds$Time)))
+
+# Variance explained 
+
+varex = 0
+cumvar = 0
+denom = sum(D^2)
+for(i in 1:64){
+  varex[i] = D[i]^2/denom
+  cumvar[i] = sum(D[1:i]^2)/denom
+}
+
+## variance explained by each PC cumulatively
+varex
+cumvar
+
+
+U <- as.data.frame(U)
+norm_count <- ggplot(data=U, aes(x=U[,3], y=U[,4], color=factor(dds$Time))) + geom_point() + scale_color_discrete(name = "Time") + xlab("PC3 (6% of variation explained)") + ylab("PC4 (5% of variation explained)") 
+
+plot_grid(norm_count)
+
+U <- as.data.frame(U)
+norm_count <- ggplot(data=U, aes(x=U[,5], y=U[,6], color=factor(dds$Time))) + geom_point() + scale_color_discrete(name = "Time") + xlab("PC5 (4% of variation explained)") + ylab("PC6 (5% of variation explained)") 
+
+plot_grid(norm_count)
+
+U <- as.data.frame(U)
+norm_count <- ggplot(data=U, aes(x=U[,7], y=U[,8], color=factor(dds$Time))) + geom_point() + scale_color_discrete(name = "Time") + xlab("PC7") + ylab("PC6") 
+
+plot_grid(norm_count)
+
+# Flow cell
+
+technical_sample_info <- read.csv("~/Desktop/weight_restoration/weight_restoration/data/technical_sample_info.csv")
+
+U <- as.data.frame(U)
+norm_count <- ggplot(data=U, aes(x=U[,1], y=U[,2], color=factor(technical_sample_info$Flowell))) + geom_point() + scale_color_discrete(name = "Flowcell") + xlab("PC1 (14% of variation explained)") + ylab("PC2 (8% of variation explained)")
+
+plot_grid(norm_count)
+
+save_plot("/Users/laurenblake/Dropbox/Figures/PCA_flowcell.png", norm_count,
+          base_aspect_ratio = 1, base_width = 6.95, base_height = 5.25)
+```
+
+
+
+
+# Differential expression analysis with voom+limma
+
+```{r}
+library(edgeR)
+library(limma)
+
+
+tx.salmon.limma <- tximport(salmon.files, type = "salmon", tx2gene = tx2gene, dropInfReps=TRUE, countsFromAbundance = "lengthScaledTPM")
+
+# Basic filtering
+cpm_filtered <- (rowSums(tx.salmon.limma$counts > 2) > 117)
+
+genes_in_cutoff <- tx.salmon.limma$counts[cpm_filtered==TRUE,]
+
+y <- DGEList(genes_in_cutoff)
+y <- calcNormFactors(y)
+
+design <- model.matrix(~as.factor(Time), data = clinical_sample)
+colnames(design) <- c("Intercept", "Time2", "Time3", "Time4", "Time5")
+
+
+cpm.voom <- voom(y, design, normalize.method="none")
+#check_rel <- duplicateCorrelation(cpm.voom, design, block = clinical_sample$BAN_ID)
+check_rel_correlation <- 0.09083534
+cpm.voom.corfit <- voom(y, design, normalize.method="none", plot = TRUE, block = clinical_sample$BAN_ID, correlation = check_rel_correlation)
+
+plotDensities(cpm.voom.corfit[,3])
+           
+pca_genes <- prcomp(t(cpm.voom.corfit$E), scale = T, retx = TRUE, center = TRUE)
+
+matrixpca <- pca_genes$x
+PC1 <- matrixpca[,1]
+PC2 <- matrixpca[,2]
+pc3 <- matrixpca[,3]
+pc4 <- matrixpca[,4]
+pc5 <- matrixpca[,5]
+
+pcs <- data.frame(PC1, PC2, pc3, pc4, pc5)
+
+summary <- summary(pca_genes)
+
+head(summary$importance[2,1:5])
+
+pca_norm_count <- ggplot(data=pcs, aes(x=PC1, y=PC2, color=clinical_sample$Time)) + geom_point(aes(colour = as.factor(clinical_sample$Time))) + ggtitle("PCA of normalized counts") + scale_color_discrete(name = "Time")
+
+plot_grid(pca_norm_count)
+
+# Run PCA
+
+X = t(scale(t(assay(vsd)),center=TRUE,scale=FALSE))
+sv = svd(t(X))
+U = sv$u
+V = sv$v
+D = sv$d
+## in R calculate the rank of a matrix is by
+#qr(t(X))$rank
+
+plot(U[,1],U[,2],xlab="PC1",ylab="PC2")
+
+U <- as.data.frame(U)
+norm_count <- ggplot(data=U, aes(x=-U[,1], y=-U[,2], color=clinical_sample[,2])) + geom_point(aes(colour = as.factor(clinical_sample[,2]))) + ggtitle("PCA of normalized counts") + scale_color_discrete(name = "Time") + xlab("PC1") + ylab("PC2")
+
+plot_grid(norm_count)
+
+# Variance explained 
+
+varex = 0
+cumvar = 0
+denom = sum(D^2)
+for(i in 1:64){
+  varex[i] = D[i]^2/denom
+  cumvar[i] = sum(D[1:i]^2)/denom
+}
+
+## variance explained by each PC cumulatively
+varex
+cumvar
+
+# Run lmFit and eBayes in limma
+
+fit <- lmFit(cpm.voom.corfit, design, block=clinical_sample$BAN_ID, correlation=check_rel_correlation)
+
+# In the contrast matrix, have the time points
+
+cm1 <- makeContrasts(Time1v2 = Time2, Time2v3 = Time3 - Time2, levels = design)
+
+# Fit the new model
+diff_species <- contrasts.fit(fit, cm1)
+fit1 <- eBayes(diff_species)
+
+FDR_level <- 0.01
+
+Time1v2 =topTable(fit1, coef=1, adjust="BH", number=Inf, sort.by="none")
+Time2v3 =topTable(fit1, coef=2, adjust="BH", number=Inf, sort.by="none")
+
+dim(Time1v2[which(Time1v2$adj.P.Val < FDR_level),])
+dim(Time1v2[which(Time2v3$adj.P.Val < FDR_level),])
+```
+
+# Differential expression analysis TMM, limma+voom
+
+```{r}
+log_counts_genes <- as.data.frame(log2(tx.salmon$counts))
+cpm <- cpm(tx.salmon$counts, log=TRUE)
+
+expr_cutoff <- 1.5
+hist(cpm, main = "log2(CPM) values in unfiltered data", breaks = 100, xlab = "log2(CPM) values")
+abline(v = expr_cutoff, col = "red", lwd = 3)
+
+# Basic filtering
+cpm_filtered <- (rowSums(cpm > 1.5) > 76)
+
+genes_in_cutoff <- cpm[cpm_filtered==TRUE,]
+
+hist(as.numeric(unlist(genes_in_cutoff)), main = "log2(CPM) values in filtered data (n = 156 samples, 12,152 genes)", breaks = 100, xlab = "log2(CPM) values")
+
+# Find the original counts of all of the genes that fit the criteria 
+
+counts_genes_in_cutoff <- tx.salmon$counts[cpm_filtered==TRUE,]
+dim(counts_genes_in_cutoff)
+
+# Take the TMM of the counts only for the genes that remain after filtering
+
+dge_in_cutoff <- DGEList(counts=as.matrix(counts_genes_in_cutoff), genes=rownames(counts_genes_in_cutoff), group = as.character(t(clinical_sample$BAN_ID)))
+dge_in_cutoff <- calcNormFactors(dge_in_cutoff)
+
+cpm_in_cutoff <- cpm(dge_in_cutoff, normalized.lib.sizes=TRUE, log=TRUE)
+
+pca_genes <- prcomp(t(cpm_in_cutoff), scale = T, retx = TRUE, center = TRUE)
+
+matrixpca <- pca_genes$x
+PC1 <- matrixpca[,1]
+PC2 <- matrixpca[,2]
+pc3 <- matrixpca[,3]
+pc4 <- matrixpca[,4]
+pc5 <- matrixpca[,5]
+
+pcs <- data.frame(PC1, PC2, pc3, pc4, pc5)
+
+summary <- summary(pca_genes)
+
+head(summary$importance[2,1:5])
+
+norm_count <- ggplot(data=pcs, aes(x=PC1, y=PC2, color= as.factor(clinical_sample$BAN_ID))) + geom_point(aes(colour = as.factor(clinical_sample$BAN_ID))) + ggtitle("PCA of normalized counts") + scale_color_discrete(name = "Time")
+
+plot_grid(norm_count)
+
+
+design <- model.matrix(~as.factor(Time), data = clinical_sample)
+colnames(design) <- c("Intercept", "Time2", "Time3", "Time4", "Time5")
+
+
+cpm.voom <- voom(dge_in_cutoff, design, normalize.method="none")
+#check_rel <- duplicateCorrelation(cpm.voom, design, block = clinical_sample$BAN_ID)
+check_rel_correlation <-  0.1136422
+cpm.voom.corfit <- voom(dge_in_cutoff, design, normalize.method="none", plot = TRUE, block = clinical_sample$BAN_ID, correlation = check_rel_correlation)
+
+plotDensities(cpm.voom.corfit[,1])
+plotDensities(cpm.voom.corfit[,2])
+plotDensities(cpm.voom.corfit[,3])
+           
+pca_genes <- prcomp(t(cpm.voom.corfit$E), scale = T, retx = TRUE, center = TRUE)
+
+matrixpca <- pca_genes$x
+PC1 <- matrixpca[,1]
+PC2 <- matrixpca[,2]
+pc3 <- matrixpca[,3]
+pc4 <- matrixpca[,4]
+pc5 <- matrixpca[,5]
+
+pcs <- data.frame(PC1, PC2, pc3, pc4, pc5)
+
+summary <- summary(pca_genes)
+
+head(summary$importance[2,1:5])
+
+ggplot(data=pcs, aes(x=PC1, y=PC2, color=clinical_sample$Time)) + geom_point(aes(colour = as.factor(clinical_sample$Time))) + ggtitle("PCA of normalized counts") + scale_color_discrete(name = "Time")
+
+
+# Run PCA
+
+X = t(scale(t(cpm_in_cutoff),center=TRUE,scale=FALSE))
+sv = svd(t(X))
+U = sv$u
+V = sv$v
+D = sv$d
+## in R calculate the rank of a matrix is by
+#qr(t(X))$rank
+
+plot(U[,1],U[,2],xlab="PC1",ylab="PC2")
+
+U <- as.data.frame(U)
+norm_count <- ggplot(data=U, aes(x=U[,1], y=U[,2], color=clinical_sample[,2])) + geom_point(aes(colour = as.factor(clinical_sample[,2]))) + ggtitle("PCA of normalized counts") + scale_color_discrete(name = "Time") + xlab("PC1") + ylab("PC2")
+
+plot_grid(norm_count)
+
+# Variance explained 
+
+varex = 0
+cumvar = 0
+denom = sum(D^2)
+for(i in 1:64){
+  varex[i] = D[i]^2/denom
+  cumvar[i] = sum(D[1:i]^2)/denom
+}
+
+## variance explained by each PC cumulatively
+varex
+cumvar
+
+# Reversed
+
+U <- as.data.frame(U)
+norm_count <- ggplot(data=U, aes(x=-U[,1], y=-U[,2], color=clinical_sample[,2])) + geom_point(aes(colour = as.factor(clinical_sample[,2]))) + ggtitle("PCA of normalized counts (rotated)") + scale_color_discrete(name = "Time") + xlab("PC1") + ylab("PC2")
+
+plot_grid(norm_count)
+
+   
+# Run lmFit and eBayes in limma
+
+fit <- lmFit(cpm.voom.corfit, design, block=clinical_sample$BAN_ID, correlation=check_rel_correlation)
+
+# In the contrast matrix, have the time points
+
+cm1 <- makeContrasts(Time1v2 = Time2, Time2v3 = Time3 - Time2, levels = design)
+
+# Fit the new model
+diff_species <- contrasts.fit(fit, cm1)
+fit1 <- eBayes(diff_species)
+
+FDR_level <- 0.01
+
+Time1v2 =topTable(fit1, coef=1, adjust="BH", number=Inf, sort.by="none")
+Time2v3 =topTable(fit1, coef=2, adjust="BH", number=Inf, sort.by="none")
+
+dim(Time1v2[which(Time1v2$adj.P.Val < FDR_level),])
+dim(Time2v3[which(Time2v3$adj.P.Val < FDR_level),])
+
+topTable(fit1, coef=1, adjust="BH", number=100, sort.by="T")
+topTable(fit1, coef=2, adjust="BH", number=100, sort.by="T")
+```
+
+# TopGO enrichment
+
+```{r}
+#time_12 <- Time1v2$adj.P.Val
+#names(time_12) <- rownames(Time1v2)
+#time_23 <- Time2v3$adj.P.Val
+#names(time_23) <- rownames(Time2v3)
+
+# Run topGO on time 1 versus 2
+#go_data <- new("topGOdata",
+#                   ontology = "BP",
+#                   allGenes = time_12, 
+#                    geneSel = function(allScore){
+#    return(allScore < 0.01)
+#},
+#                   nodeSize = 5,
+#                   annotationFun = annFUN.org,
+#                   mapping = "org.Hs.eg.db",
+#                   ID = "ensembl")
+
+# Perform enrichment test
+#go_test <- runTest(go_data, algorithm = "weight01", statistic = "fisher")
+
+#go_table <- GenTable(go_data, weightFisher = go_test,
+#                         orderBy = "weightFisher", ranksOf = "weightFisher",
+#                         topNodes = sum(score(go_test) < .01))
+
+#go_table
+
+
+
+
+# Run topGO on time 2 versus 3
+#go_data <- new("topGOdata",
+#                   ontology = "BP",
+#                   allGenes = time_12, 
+#                    geneSel = function(allScore){
+#    return(allScore < 0.01)
+#},
+#                   nodeSize = 5,
+#                   annotationFun = annFUN.org,
+#                   mapping = "org.Hs.eg.db",
+#                   ID = "ensembl")
+
+# Perform enrichment test
+#go_test <- runTest(go_data, algorithm = "weight01", statistic = "fisher")
+
+#go_table <- GenTable(go_data, weightFisher = go_test,
+#                         orderBy = "weightFisher", ranksOf = "weightFisher",
+#                         topNodes = sum(score(go_test) < .01))
+
+#go_table
+```
+
+
+# Differential expression analysis with DESeq2
+
+```{r}
+library("vsn")
+library("tidyverse")
+library("RColorBrewer")
+library("pheatmap")
+library("BiocParallel")
+register(MulticoreParam(4))
+
+## Set color palette for figures
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+
+tx.salmon <- tximport(salmon.files, type = "salmon", tx2gene = tx2gene, dropInfReps=TRUE)
+
+dds <- DESeqDataSetFromTximport(tx.salmon, colData=clinical_sample, design = ~ BAN_ID + Time)
+
+# Minimal filtering
+
+#dds <- dds[ rowSums(counts(dds)) > 76, ]
+#nrow(dds)
+
+# Visualize the data
+
+ntd <- normTransform(dds)
+meanSdPlot(assay(ntd))
+
+vsd <- vst(dds, blind = FALSE)
+head(assay(vsd),3)
+vsd_true <- vst(dds, blind = TRUE)
+head(assay(vsd),3)
+meanSdPlot(assay(vsd))
+
+# As stated in the DESeq2 manual, rlog takes a long time
+#rld <- rlog(dds, blind = FALSE)
+#meanSdPlot(assay(rld))
+
+# Distance based on roughly equal contribution from each gene
+
+sampleDists <- dist(t(assay(vsd)))
+head(sampleDists)
+
+sampleDistMatrix <- as.matrix( sampleDists )
+rownames(sampleDistMatrix) <- paste(vsd$Time)
+colnames(sampleDistMatrix) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+pheatmap(sampleDistMatrix,
+         clustering_distance_rows = sampleDists,
+         clustering_distance_cols = sampleDists,
+         col = colors)
+
+plotPCA(vsd, intgroup=c("Time"))
+
+
+# Looking at outliers
+
+#boxplot(log10(assays(dds)[["cooks"]]), range = 0, las=2)
+
+# Dispersion plot
+
+#plotDispEsts(dds)
+
+
+pcaData <- plotPCA(vsd, intgroup=c("Time"), returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+
+ggplot(pcaData, aes(x = PC1, y = PC2, color = Time)) +
+  geom_point(size =3) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  coord_fixed()
+
+pcaData <- plotPCA(vsd_true, intgroup=c("Time"), returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+
+ggplot(pcaData, aes(x = PC1, y = PC2, color = Time)) +
+  geom_point(size =3) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  coord_fixed()
+
+X = t(scale(t(assay(vsd)),center=TRUE,scale=FALSE))
+sv = svd(t(X))
+U = sv$u
+V = sv$v
+D = sv$d
+## in R calculate the rank of a matrix is by
+#qr(t(X))$rank
+
+plot(U[,1],U[,2],xlab="PC1",ylab="PC2")
+
+U <- as.data.frame(U)
+ggplot(data=U, aes(x=U[,1], y=U[,2], color=clinical_sample[,2])) + geom_point(aes(colour = as.factor(clinical_sample[,2]))) + ggtitle("PCA of normalized counts") + scale_color_discrete(name = "Time") + xlab("PC1") + ylab("PC2")
+
+X = t(scale(t(assay(vsd_true)),center=TRUE,scale=FALSE))
+sv = svd(t(X))
+U = sv$u
+V = sv$v
+D = sv$d
+## in R calculate the rank of a matrix is by
+#qr(t(X))$rank
+
+plot(U[,1],U[,2],xlab="PC1",ylab="PC2")
+
+U <- as.data.frame(U)
+ggplot(data=U, aes(x=U[,1], y=U[,2], color=clinical_sample[,2])) + geom_point(aes(colour = as.factor(clinical_sample[,2]))) + ggtitle("PCA of normalized counts") + scale_color_discrete(name = "Time") + xlab("PC1") + ylab("PC2")
+
+
+## Write normalized counts to file
+#normalized.counts <- as.data.frame(counts(dds, normalized=TRUE ))
+#head(normalized.counts)
+```
+
+
+
+

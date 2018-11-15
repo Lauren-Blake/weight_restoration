@@ -1,0 +1,100 @@
+---
+title: "Collection dates"
+author: "Lauren Blake"
+date: 2018-07-17
+output: workflowr::wflow_html
+---
+
+
+
+
+# Introduction
+
+The goal of this script is to collect the dates that each of the time points were collected at. 
+
+```{r}
+# Load file
+
+year_month_date <- read.csv("../data/BAN_dates_txt.csv", header = TRUE, stringsAsFactors = FALSE)
+
+dim(year_month_date)
+```
+
+# Example of difftime
+
+```{r}
+difftime(year_month_date[1,6], year_month_date[1,4], units = c("days"))
+```
+
+# Difference in time at T0 to T1, T0 to T2, and T0 to T3
+
+```{r}
+for (i in 1:55){
+  # T0 to T1
+    if(year_month_date[i,6] == "."){print(NA)}
+  else{
+  # Admission to discharge
+  print(round(as.numeric(difftime(year_month_date[i,6], year_month_date[i,4], units = c("days")))), digits = 0)}
+  
+  
+  # T1 to T2
+  if(year_month_date[i,8] == "."){print(NA)}
+  else{
+  # Admission to discharge
+  print(round(as.numeric(difftime(year_month_date[i,8], year_month_date[i,4], units = c("days")))), digits = 0)}
+  
+  # T2 to T3 
+  
+  if(year_month_date[i,13] == "."){next}
+  else{
+  # Admission to time 3
+  print(round(as.numeric(difftime(year_month_date[i,13], year_month_date[i,4], units = c("days")))))}
+  
+}
+```
+
+# Difference in time at T0 to T4 and T0 to T5
+
+```{r}
+for (i in 1:55){
+  if(year_month_date[i,16] == ""){next}
+  else{
+  # Admission to discharge
+  print(round(as.numeric(difftime(year_month_date[i,16], year_month_date[i,4], units = c("days")))), digits = 0)}
+  
+  if(year_month_date[i,17] == ""){next}
+  else{
+  # Admission to time 3
+  print(round(as.numeric(difftime(year_month_date[i,17], year_month_date[i,4], units = c("days")))))}
+  
+}
+```
+
+# Difference between T1 and T2
+
+```{r}
+for (i in 1:55){
+    if(year_month_date[i,8] == "."){print(NA)}
+  else{
+  # Admission to discharge
+  print(round(as.numeric(difftime(year_month_date[i,8], year_month_date[i,6], units = c("days")))), digits = 0)}
+}
+  
+```
+
+# Find ages that are missing
+
+```{r}
+# Load file
+
+birth_age <- read.csv("../data/birthday_age.csv", header = TRUE, stringsAsFactors = FALSE)
+
+# Birthday to bloodwork in weeks --> years
+
+for (i in 1:nrow(birth_age)){
+  # Admission to discharge
+ print(round(as.numeric(difftime(birth_age[i,4], birth_age[i,3], units = c("weeks")), digits = 0))/52.1429)
+}
+```
+
+

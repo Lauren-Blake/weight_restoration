@@ -1,0 +1,110 @@
+---
+title: "Convert_IDs"
+author: "Lauren Blake"
+date: 2018-07-11
+output: workflowr::wflow_html
+---
+
+
+
+
+# Open IDs
+
+```{r}
+library(haven)
+HTSF_IDs <- read_sav("../data/HTSF_IDs.sav")
+
+library("tidyr")
+```
+
+# Obtain HTSF IDs and Baker IDs in the second flowcell run
+
+```{r}
+beginning_baker <- as.data.frame(paste(HTSF_IDs$V2, HTSF_IDs$V1, sep = "-"), stringsAsFactors = FALSE)
+
+
+
+adaptor <- sapply(strsplit(HTSF_IDs$V18, split='_', fixed=TRUE), `[`, 5)
+s_num <- sapply(strsplit(HTSF_IDs$V18, split='_', fixed=TRUE), `[`, 6)
+lane <- sapply(strsplit(HTSF_IDs$V18, split='_', fixed=TRUE), `[`, 7)
+pe <- sapply(strsplit(HTSF_IDs$V18, split='_', fixed=TRUE), `[`, 8)
+fastq <- sapply(strsplit(HTSF_IDs$V18, split='_', fixed=TRUE), `[`, 9)
+check_end <- as.data.frame(paste(adaptor, s_num, lane, pe, fastq, sep = "_"), stringsAsFactors = FALSE)
+
+beginning_baker <- as.data.frame(paste(HTSF_IDs$V2, HTSF_IDs$V1, sep = "-"), stringsAsFactors = FALSE)
+end_baker <-  cbind(beginning_baker, check_end)
+total_baker <- paste(end_baker[,1],end_baker[,2], sep="_")
+
+HTSF_comb <- as.data.frame(cbind(HTSF_IDs$V18, total_baker, stringsAsFactors = FALSE))
+
+HTSF_comb_170913 <- which(grepl("170913", HTSF_comb[,1]) == TRUE)
+HTSF_comb_170913_only <- HTSF_comb[HTSF_comb_170913,]
+colnames(HTSF_comb_170913_only) <- cbind("File_1_name", "Beginning_File_2")
+
+write.csv(HTSF_comb_170913_only, "/Users/laurenblake/Dropbox/Lauren Blake/For_Rachel/legend.csv", row.names = FALSE, quote = FALSE)
+```
+
+# Put values in order
+
+```{r}
+# Delete the first 24 (RRED study)
+
+ID_name <- as.data.frame(HTSF_IDs$V2[-(1:24)], stringsAsFactors = FALSE)
+
+make_ID <- as.data.frame(unlist(lapply(strsplit(ID_name[,1], split="N"), "[", 2)), stringsAsFactors = FALSE)
+
+non_RED <- as.data.frame((make_ID[,1]), stringsAsFactors = FALSE)
+colnames(non_RED) <- c("ID")
+
+# Get non RED individual ID
+
+non_RED_ind <- as.data.frame(substr(non_RED[,1], 2, 5), stringsAsFactors = FALSE)
+
+# Add RED back in
+
+RED <- as.data.frame(HTSF_IDs$V1[(1:24)], stringsAsFactors = FALSE)
+colnames(RED) <- c("ID")
+
+# Get RED ID
+
+RED_ind <- as.data.frame(substr(RED[,1], 5, 8), stringsAsFactors = FALSE)
+
+all_id <- rbind(non_RED, RED)
+
+colnames(non_RED_ind) <- c("Individual")
+colnames(RED_ind) <- c("Individual")
+all_ind <- rbind(non_RED_ind, RED_ind)
+
+# Get time
+
+substrRight <- function(x, n){
+  substr(x, nchar(x)-n+1, nchar(x))
+}
+
+time_values <- array(NA, dim = c(nrow(all_id),1))
+
+for (i in 1:nrow(all_id)){
+  time_values[i,] <- substrRight(all_id[i,], 1)
+}
+
+time_values <- as.numeric(time_values)
+
+# Combine ID, individual, and time
+
+info <- cbind(all_id, all_ind, time_values)
+
+# Eliminate duplicates
+
+ all_info <- info[duplicated(info), ]
+
+#write.csv(all_info, "/Users/laurenblake/Dropbox/Lauren Blake/RNA_seq_project/clinical_sample_info.csv", row.names = FALSE, quote = FALSE)
+```
+
+# Look at first entry in results from Bioinformatics core
+
+```{r}
+which(grepl("170901_UNC32-K00270_0056_BHLC5LBBXX_AACCGAAC_S19_L002", HTSF_IDs$V18))
+```
+
+
+

@@ -1,0 +1,357 @@
+---
+title: "voom_limma_weight_change"
+author: "Lauren Blake"
+date: "2018-08-20"
+output: workflowr::wflow_html
+editor_options: 
+  chunk_output_type: console
+---
+
+## Introduction
+
+```{r}
+# Library
+
+library(edgeR)
+library(limma)
+library(VennDiagram)
+library(cowplot)
+# Read in the data
+
+tx.salmon <- readRDS("../data/counts_hg38_gc_txsalmon.RData")
+salmon_counts<- as.data.frame(tx.salmon$counts)
+
+
+#tx.salmon <- readRDS("../data/counts_hg38_gc_dds.RData")
+#salmon_counts<- as.data.frame(tx.salmon)
+
+
+# Subset to T1-T3
+
+salmon_counts <- salmon_counts[,1:144]
+
+# Read in the clinical covariates
+
+clinical_sample_info <- read.csv("../data/lm_covar_fixed_random.csv")
+dim(clinical_sample_info)
+
+# Subset to T1-T3
+
+clinical_sample <- clinical_sample_info[1:144,(-12)]
+
+dim(clinical_sample)
+```
+
+## Differential expression pipeline
+
+```{r}
+# Filter lowly expressed reads
+
+cpm <- cpm(salmon_counts, log=TRUE)
+
+expr_cutoff <- 1.5
+hist(cpm, main = "log2(CPM) values in unfiltered data", breaks = 100, xlab = "log2(CPM) values")
+abline(v = expr_cutoff, col = "red", lwd = 3)
+
+hist(cpm, main = "log2(CPM) values in unfiltered data", breaks = 100, xlab = "log2(CPM) values", ylim = c(0, 100000))
+abline(v = expr_cutoff, col = "red", lwd = 3)
+
+
+# Basic filtering
+cpm_filtered <- (rowSums(cpm > 1.5) > 72)
+
+genes_in_cutoff <- cpm[cpm_filtered==TRUE,]
+
+hist(as.numeric(unlist(genes_in_cutoff)), main = "log2(CPM) values in filtered data", breaks = 100, xlab = "log2(CPM) values")
+
+# Find the original counts of all of the genes that fit the criteria 
+
+counts_genes_in_cutoff <- salmon_counts[cpm_filtered==TRUE,]
+dim(counts_genes_in_cutoff)
+
+# Filter out hemoglobin
+
+counts_genes_in_cutoff <-  counts_genes_in_cutoff[which( rownames(counts_genes_in_cutoff) != "HBB" ),]
+counts_genes_in_cutoff <-  counts_genes_in_cutoff[which( rownames(counts_genes_in_cutoff) != "HBA2" ),]
+counts_genes_in_cutoff <-  counts_genes_in_cutoff[which( rownames(counts_genes_in_cutoff) != "HBA1" ),]
+
+# Take the TMM of the counts only for the genes that remain after filtering
+
+dge_in_cutoff <- DGEList(counts=as.matrix(counts_genes_in_cutoff), genes=rownames(counts_genes_in_cutoff), group = as.character(t(clinical_sample$Individual)))
+dge_in_cutoff <- calcNormFactors(dge_in_cutoff)
+
+cpm_in_cutoff <- cpm(dge_in_cutoff, normalized.lib.sizes=TRUE, log=TRUE)
+
+pca_genes <- prcomp(t(cpm_in_cutoff), scale = T, retx = TRUE, center = TRUE)
+
+matrixpca <- pca_genes$x
+PC1 <- matrixpca[,1]
+PC2 <- matrixpca[,2]
+pc3 <- matrixpca[,3]
+pc4 <- matrixpca[,4]
+pc5 <- matrixpca[,5]
+
+pcs <- data.frame(PC1, PC2, pc3, pc4, pc5)
+
+summary <- summary(pca_genes)
+
+head(summary$importance[2,1:5])
+
+norm_count <- ggplot(data=pcs, aes(x=PC1, y=PC2, color= as.factor(clinical_sample$Time))) + geom_point(aes(colour = as.factor(clinical_sample$Time))) + ggtitle("PCA of normalized counts") + scale_color_discrete(name = "Time")
+
+plot_grid(norm_count)
+
+
+clinical_sample[,1] <- as.factor(clinical_sample[,1])
+
+clinical_sample[,2] <- as.factor(clinical_sample[,2])
+
+clinical_sample[,4] <- as.factor(clinical_sample[,4])
+
+clinical_sample[,5] <- as.factor(clinical_sample[,5])
+
+clinical_sample[,6] <- as.factor(clinical_sample[,6])
+
+
+# Create the design matrix
+
+# Use the standard treatment-contrasts parametrization. See Ch. 9 of limma
+# User's Guide.
+
+design <- model.matrix(~as.factor(Time) + Age + as.factor(Race) + as.factor(BE_GROUP) + as.factor(psychmeds) + RBC + AN + AE + AL  + RIN + Change_weight, data = clinical_sample)
+colnames(design) <- c("Intercept", "Time2", "Time3", "Race3", "Race5", "Age", "BE", "Psychmeds", "RBC", "AN", "AE", "AL", "RIN", "Change_weight")
+
+
+# Fit model 
+
+# Model individual as a random effect.
+# Recommended to run both voom and duplicateCorrelation twice.
+# https://support.bioconductor.org/p/59700/#67620
+
+cpm.voom <- voom(dge_in_cutoff, design, normalize.method="none")
+#check_rel <- duplicateCorrelation(cpm.voom, design, block = clinical_sample$Individual)
+check_rel_correlation <-  0.1179835
+cpm.voom.corfit <- voom(dge_in_cutoff, design, normalize.method="none", plot = TRUE, block = clinical_sample$Individual, correlation = check_rel_correlation)
+#check_rel <- duplicateCorrelation(cpm.voom.corfit, design, block = clinical_sample$Individual)
+check_rel_correlation <- 0.1188083
+
+plotDensities(cpm.voom.corfit[,1])
+plotDensities(cpm.voom.corfit[,2])
+plotDensities(cpm.voom.corfit[,3])
+           
+pca_genes <- prcomp(t(cpm.voom.corfit$E), scale = T, retx = TRUE, center = TRUE)
+
+matrixpca <- pca_genes$x
+PC1 <- matrixpca[,1]
+PC2 <- matrixpca[,2]
+pc3 <- matrixpca[,3]
+pc4 <- matrixpca[,4]
+pc5 <- matrixpca[,5]
+
+pcs <- data.frame(PC1, PC2, pc3, pc4, pc5)
+
+summary <- summary(pca_genes)
+
+head(summary$importance[2,1:5])
+
+ggplot(data=pcs, aes(x=PC1, y=PC2, color=clinical_sample$Time)) + geom_point(aes(colour = as.factor(clinical_sample$Time))) + ggtitle("PCA of normalized counts") + scale_color_discrete(name = "Time")
+
+# Run lmFit and eBayes in limma
+
+fit <- lmFit(cpm.voom.corfit, design, block=clinical_sample$Individual, correlation=check_rel_correlation)
+
+# In the contrast matrix, have the time points
+
+cm1 <- makeContrasts(Time1v2 = Time2, Time2v3 = Time3 - Time2, levels = design)
+
+#cm1 <- makeContrasts(Time1v2 = Time2, Time2v3 = Time3, levels = design)
+
+# Fit the new model
+diff_species <- contrasts.fit(fit, cm1)
+fit1 <- eBayes(diff_species)
+
+FDR_level <- 0.05
+
+Time1v2 =topTable(fit1, coef=1, adjust="BH", number=Inf, sort.by="none")
+Time2v3 =topTable(fit1, coef=2, adjust="BH", number=Inf, sort.by="none")
+
+#plot(fit1$coefficients[,1], fit1$coefficients[,2])
+plot(Time1v2$logFC, Time2v3$logFC)
+plot(Time1v2$t, Time2v3$t)
+plot(Time1v2$adj.P.Val, Time2v3$adj.P.Val)
+
+dim(Time1v2[which(Time1v2$adj.P.Val < FDR_level),])
+dim(Time2v3[which(Time2v3$adj.P.Val < FDR_level),])
+
+head(topTable(fit1, coef=1, adjust="BH", number=100, sort.by="T"))
+head(topTable(fit1, coef=2, adjust="BH", number=100, sort.by="T"))
+```
+
+
+## Make a Venn Diagram of the DE genes
+
+```{r}
+# FDR 1%
+FDR_level <- 0.01
+
+Time12 <- rownames(Time1v2[which(Time1v2$adj.P.Val < FDR_level),])
+
+Time23 <- rownames(Time2v3[which(Time2v3$adj.P.Val < FDR_level),])
+
+mylist <- list()
+mylist[["DE T1 to T2"]] <- Time12
+mylist[["DE T2 to T3"]] <- Time23
+
+# Make as pdf 
+Four_comp <- venn.diagram(mylist, filename= NULL, main="DE genes between timepoints (1% FDR)", cex=1.5 , fill = NULL, lty=1, height=2000, width=2000, rotation.degree = 180, scaled = FALSE, cat.pos = c(0,0))
+
+grid.draw(Four_comp)
+dev.off()
+
+#pdf(file = "~/Dropbox/Figures/DET1_T2_change_weight_FDR1.pdf")
+#  grid.draw(Four_comp)
+#dev.off()
+
+
+```
+
+```{r}
+# FDR 5%
+
+FDR_level <- 0.05
+Time12 <- rownames(Time1v2[which(Time1v2$adj.P.Val < FDR_level),])
+
+Time23 <- rownames(Time2v3[which(Time2v3$adj.P.Val < FDR_level),])
+
+mylist <- list()
+mylist[["DE T1 to T2"]] <- Time12
+mylist[["DE T2 to T3"]] <- Time23
+
+# Make as pdf 
+Four_comp <- venn.diagram(mylist, filename= NULL, main="DE genes between timepoints (5% FDR)", cex=1.5 , fill = NULL, lty=1, height=2000, width=2000, rotation.degree = 180, scaled = FALSE, cat.pos = c(0,0))
+
+grid.draw(Four_comp)
+
+dev.off()
+
+pdf(file = "~/Dropbox/Figures/DET1_T2_change_weight_FDR5.pdf")
+  grid.draw(Four_comp)
+dev.off()
+
+```
+
+
+# Using DAVID
+
+Step 1: Use awk command to go from annotation file to ENSG and gene name only
+
+cat gencode.v22.annotation.gtf | awk 'BEGIN{FS="\t"}{split($9,a,";"); if($3~"gene") print a[1]"\t"a[3]"\t"$1":"$4"-"$5"\t"$7}' | sed 's/gene_id "//' | sed 's/gene_id "//' | sed 's/gene_biotype "//'| sed 's/gene_name "//' | sed 's/"//g' > Homo_sapiens.GRCh38.v22_table.txt
+
+Step 2: Get ENSEMBL Gene IDs for background
+```{r}
+# Set FDR level
+
+FDR_level <- 0.01
+
+# Get gene names after filtering
+genes=as.data.frame(rownames(counts_genes_in_cutoff))
+colnames(genes) <- c("Gene_name")
+
+
+# Gene to ID conversion document
+
+gene_id <- read.table("../data/Homo_sapiens.GRCh38.v22_table.txt", stringsAsFactors = FALSE)
+colnames(gene_id) <- c("ENSEMBL", "Gene_name")
+
+# Eliminate the feature after the period (for DAVID)
+check <- gsub("\\..*","",gene_id$ENSEMBL)
+
+new_gene_id <- cbind(check, gene_id$Gene_name)
+gene_id <- new_gene_id
+colnames(gene_id) <- c("ENSEMBL", "Gene_name")
+
+# Get gene names of the background
+comb_background <- merge(genes, gene_id, by = c("Gene_name"))
+summary(duplicated(comb_background$Gene_name))
+
+comb_background1 <- comb_background[!duplicated(comb_background$Gene_name),]
+
+dim(comb_background1)
+
+#write.table(comb_background1$ENSEMBL, "../data/DAVID_background.txt", quote = F, row.names = F, col.names = F)
+
+
+```
+
+Step 3: Get ENSEMBL Gene IDs for T1 to T2 list
+```{r}
+# Get gene names after filtering
+genes=as.data.frame(rownames(Time1v2[which(Time1v2$adj.P.Val < FDR_level),]))
+
+colnames(genes) <- c("Gene_name")
+
+# Get gene names of the list
+comb_list <- merge(genes, gene_id, by = c("Gene_name"))
+summary(duplicated(comb_list$Gene_name))
+
+comb_list <- comb_list[!duplicated(comb_list$Gene_name),]
+
+dim(comb_list)
+
+write.table(comb_list$ENSEMBL, "../data/DAVID_list_T1T2_weight.txt", quote = F, row.names = F, col.names = F)
+
+# Kim et al used the top 100 genes
+
+genes=as.data.frame(rownames(topTable(fit1, coef=1, adjust="BH", number=100, sort.by="T")))
+
+colnames(genes) <- c("Gene_name")
+
+# Get gene names of the list
+comb_list <- merge(genes, gene_id, by = c("Gene_name"))
+summary(duplicated(comb_list$Gene_name))
+
+comb_list <- comb_list[!duplicated(comb_list$Gene_name),]
+
+dim(comb_list)
+
+write.table(comb_list$ENSEMBL, "../data/DAVID_top100_list_T1T2_weight.txt", quote = F, row.names = F, col.names = F)
+```
+
+Step 4: Get ENSEMBL Gene IDs for T2 to T3 list
+```{r}
+# Get gene names after filtering
+genes=as.data.frame(rownames(Time2v3[which(Time2v3$adj.P.Val < FDR_level),]))
+
+colnames(genes) <- c("Gene_name")
+
+# Get gene names of the list
+comb_list <- merge(genes, gene_id, by = c("Gene_name"))
+summary(duplicated(comb_list$Gene_name))
+
+comb_list <- comb_list[!duplicated(comb_list$Gene_name),]
+
+dim(comb_list)
+
+write.table(comb_list$ENSEMBL, "../data/DAVID_list_T2T3_weight.txt", quote = F, row.names = F, col.names = F)
+
+# Kim et al used the top 100 genes
+
+genes=as.data.frame(rownames(topTable(fit1, coef=2, adjust="BH", number=100, sort.by="T")))
+
+colnames(genes) <- c("Gene_name")
+
+# Get gene names of the list
+comb_list <- merge(genes, gene_id, by = c("Gene_name"))
+summary(duplicated(comb_list$Gene_name))
+
+comb_list <- comb_list[!duplicated(comb_list$Gene_name),]
+
+dim(comb_list)
+
+write.table(comb_list$ENSEMBL, "../data/DAVID_top100_list_T2T3_weight.txt", quote = F, row.names = F, col.names = F)
+
+```
+
+Step 5: Upload or copy and paste the gene lists to DAVID at
+https://david.ncifcrf.gov/conversion.jsp. Note, larger gene lists are more likely to need to be copied and pasted in the "Upload" tab, rather than uploaded.
+

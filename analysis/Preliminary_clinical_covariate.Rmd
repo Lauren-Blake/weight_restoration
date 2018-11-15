@@ -1,0 +1,326 @@
+---
+title: "Preliminary exploration of clinical covariates"
+author: "Lauren Blake"
+date: 2018-07-17
+output: workflowr::wflow_html
+---
+
+
+
+
+# Introduction
+
+The goal of this analysis is to get a sense of the distributions of the clinical covariates versus PCs. 
+
+# Correlations with all the data that has been vst transformed with DESeq2
+
+```{r}
+# Import libraries
+
+library("ggplot2")
+library("cowplot")
+
+# Import normalized
+
+vsd <- readRDS("../data/vsd_values_hg38_gc.rds")
+
+# Import covariates
+
+current_covar <- read.csv("../data/final_covariates.csv")
+
+```
+
+# Correlations between variables
+
+```{r}
+cor(current_covar, use = "pairwise.complete.obs")
+```
+
+# PCA using all genes
+
+```{r}
+vsd <- as.data.frame(vsd)
+pca_genes <- prcomp(t(vsd), center = TRUE)
+
+scores <- as.data.frame(pca_genes$x)
+
+
+# PCs 1+2
+
+norm_count <- ggplot(data=scores, aes(x=PC1, y=PC2, color=factor(current_covar$Time))) + geom_point() + scale_color_discrete(name = "Time") + xlab("PC1 (12.2% of variation explained)") + ylab("PC2 (7.0% of variation explained)") +  scale_colour_manual(name = "Time", values=c("#F8766D", "#B79F00", "#00BA38", "#3399FF", "#CC66FF"))
+
+
+plot_grid(norm_count)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/Hg38_PC12.png", norm_count,
+#          base_aspect_ratio = 1)
+
+# PCs 3 + 4
+
+norm_count <- ggplot(data=scores, aes(x=PC3, y=PC4, color=factor(current_covar$Time))) + geom_point() + scale_color_discrete(name = "Time") + xlab("PC3 (5.8% of variation explained)") + ylab("PC4 (5.2% of variation explained)") +  scale_colour_manual(name = "Time", values=c("#F8766D", "#B79F00", "#00BA38", "#3399FF", "#CC66FF"))
+
+
+plot_grid(norm_count)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/Hg38_PC34.png", norm_count,
+#          base_aspect_ratio = 1)
+
+# PCs 5+6
+
+norm_count <- ggplot(data=scores, aes(x=PC5, y=PC6, color=factor(current_covar$Time))) + geom_point() + scale_color_discrete(name = "Time") + xlab("PC5 (3.7% of variation explained)") + ylab("PC6 (2.3% of variation explained)") +  scale_colour_manual(name = "Time", values=c("#F8766D", "#B79F00", "#00BA38", "#3399FF", "#CC66FF"))
+
+
+plot_grid(norm_count)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/Hg38_PC56.png", norm_count,
+#          base_aspect_ratio = 1)
+
+# Numeric covariates
+
+num_val <- c(3, 13:19)
+current_covar_num <- current_covar[,num_val]
+
+# Categorical covariates
+
+cat_val <- c(1:2, 4:12)
+current_covar_cat <- current_covar[,cat_val]
+
+
+# PCs versus numerical
+                   
+PC_pvalues_day = matrix(data = NA, nrow = 5, ncol = 8, dimnames = list(c("PC1", "PC2", "PC3", "PC4", "PC5"), c("Age", "RBC", "Platelet", "AN", "AM", "AE", "AB", "AL")))
+
+pvalues_day = matrix(data = NA, nrow = 5, ncol = 8, dimnames = list(c("PC1", "PC2", "PC3", "PC4", "PC5"), c("Age", "RBC", "Platelet", "AN", "AM", "AE", "AB", "AL")))
+
+
+for(j in 1: length(num_val)){
+for(i in 1:5){
+# PC versus time
+
+ checkPC1 <- lm(scores[,i] ~ current_covar_num[,j])
+
+#Get the summary statistics from it
+  summary(checkPC1)
+
+#Get the p-value of the F-statistic
+  summary(checkPC1)$fstatistic
+
+  fstat <- as.data.frame(summary(checkPC1)$fstatistic)
+  p_fstat <- 1-pf(fstat[1,], fstat[2,], fstat[3,])
+  pvalues_day[i,j] <- p_fstat
+  
+#Fraction of the variance explained by the model
+  r_value <- summary(checkPC1)$r.squared
+  PC_pvalues_day[i,j] <- sqrt(summary(checkPC1)$r.squared)
+}
+}
+
+
+# PCs versus categorical 
+                   
+PC_pvalues_day = matrix(data = NA, nrow = 5, ncol = 11, dimnames = list(c("PC1", "PC2", "PC3", "PC4", "PC5"), c("Individual", "Time", "BE", "BE2", "BINGE", "PURGE", "BE_LOCAL", "BE_GROUP", "Psych_meds", "Hormone", "VitSupp")))
+
+pvalues_day = matrix(data = NA, nrow = 5, ncol = 11, dimnames = list(c("PC1", "PC2", "PC3", "PC4", "PC5"), c("Individual", "Time", "BE", "BE2", "BINGE", "PURGE", "BE_LOCAL", "BE_GROUP", "Psych_meds", "Hormone", "VitSupp")))
+
+
+for(j in 1: length(cat_val)){
+for(i in 1:5){
+# PC versus time
+
+ checkPC1 <- lm(scores[,i] ~ current_covar_cat[,j])
+
+#Get the summary statistics from it
+  summary(checkPC1)
+
+#Get the p-value of the F-statistic
+  summary(checkPC1)$fstatistic
+
+  fstat <- as.data.frame(summary(checkPC1)$fstatistic)
+  p_fstat <- 1-pf(fstat[1,], fstat[2,], fstat[3,])
+  pvalues_day[i,j] <- p_fstat
+  
+#Fraction of the variance explained by the model
+  r_value <- summary(checkPC1)$r.squared
+  PC_pvalues_day[i,j] <- sqrt(summary(checkPC1)$r.squared)
+}
+}
+
+
+
+PC_pvalues_day = matrix(data = 0, nrow = 5, ncol = 19, dimnames = list(c("PC1", "PC2", "PC3", "PC4", "PC5"), c("Individual", "Time", "Age", "BE", "BE2", "BINGE", "PURGE", "BE_LOC", "BE_GROUP", "psychmeds", "hormone", "vitsupp", "RBC", "Platelet", "AN", "AM", "AE", "AB", "AL")))
+
+i = 1
+j = 1
+
+for(j in 1:19){
+  i = 1
+  for(i in 1:5){
+  PC_pvalues_day[i,j] <- cor(scores[,i], current_covar[,j], use = "pairwise.complete.obs")
+#  print(i)
+#  print(j)
+  }
+}
+  
+
+
+
+# Race and ethnicity
+
+PC_pvalues_day = matrix(data = NA, nrow = 5, ncol = 2, dimnames = list(c("PC1", "PC2", "PC3", "PC4", "PC5"), c("Race", "Ethnicity")))
+
+pvalues_day = matrix(data = NA, nrow = 5, ncol = 2, dimnames = list(c("PC1", "PC2", "PC3", "PC4", "PC5"), c("Race", "Ethnicity")))
+
+
+for(j in 20:21){
+for(i in 1:5){
+# PC versus time
+
+ checkPC1 <- lm(scores[,i] ~ as.factor(current_covar[,j]))
+
+#Get the summary statistics from it
+  summary(checkPC1)
+
+#Get the p-value of the F-statistic
+  summary(checkPC1)$fstatistic
+
+  fstat <- as.data.frame(summary(checkPC1)$fstatistic)
+  p_fstat <- 1-pf(fstat[1,], fstat[2,], fstat[3,])
+  pvalues_day[i,j-19] <- p_fstat
+  
+#Fraction of the variance explained by the model
+  r_value <- summary(checkPC1)$r.squared
+  PC_pvalues_day[i,j-19] <- sqrt(summary(checkPC1)$r.squared)
+}
+}
+
+# RIN
+
+PC_pvalues_day = matrix(data = NA, nrow = 5, ncol = 1, dimnames = list(c("PC1", "PC2", "PC3", "PC4", "PC5"), c("RIN")))
+
+pvalues_day = matrix(data = NA, nrow = 5, ncol = 1, dimnames = list(c("PC1", "PC2", "PC3", "PC4", "PC5"), c("RIN")))
+
+
+for(j in 22){
+for(i in 1:5){
+# PC versus time
+
+ checkPC1 <- lm(scores[,i] ~ current_covar[,j])
+
+#Get the summary statistics from it
+  summary(checkPC1)
+
+#Get the p-value of the F-statistic
+  summary(checkPC1)$fstatistic
+
+  fstat <- as.data.frame(summary(checkPC1)$fstatistic)
+  p_fstat <- 1-pf(fstat[1,], fstat[2,], fstat[3,])
+  pvalues_day[i,j-21] <- p_fstat
+  
+#Fraction of the variance explained by the model
+  r_value <- summary(checkPC1)$r.squared
+  PC_pvalues_day[i,j-21] <- sqrt(summary(checkPC1)$r.squared)
+}
+}
+```
+
+# Include only the genes that have a high enough expression to be included in the differential expression analysis
+
+```{r}
+
+# Load gene expression data from all 156 samples
+
+normalized_data <- read.csv("../data/gene_expression_filtered_T1T5.csv")
+
+# Run PCA on the normalized data
+
+pca_genes <- prcomp(t(normalized_data[,2:157]), scale = TRUE, center = TRUE)
+
+matrixpca <- pca_genes$x
+PC1 <- matrixpca[,1]
+PC2 <- matrixpca[,2]
+pc3 <- matrixpca[,3]
+pc4 <- matrixpca[,4]
+pc5 <- matrixpca[,5]
+
+matrixpca <- as.data.frame(matrixpca)
+
+summary <- summary(pca_genes)
+
+head(summary$importance[2,1:5])
+
+# PCs 1+2
+
+norm_count <- ggplot(data=matrixpca, aes(x=PC1, y=PC2, color=factor(current_covar$Time))) + geom_point() + scale_color_discrete(name = "Time") + xlab("PC1 (23.5% of variation explained)") + ylab("PC2 (13.4% of variation explained)") +  scale_colour_manual(name = "Time", values=c("#F8766D", "#B79F00", "#00BA38", "#3399FF", "#CC66FF"))
+
+
+plot_grid(norm_count)
+
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/Hg38_PC12_BI.png", norm_count,
+#          base_aspect_ratio = 1)
+
+
+
+# PCs versus numerical
+                   
+PC_pvalues_day = matrix(data = NA, nrow = 5, ncol = 8, dimnames = list(c("PC1", "PC2", "PC3", "PC4", "PC5"), c("Age", "RBC", "Platelet", "AN", "AM", "AE", "AB", "AL")))
+
+pvalues_day = matrix(data = NA, nrow = 5, ncol = 8, dimnames = list(c("PC1", "PC2", "PC3", "PC4", "PC5"), c("Age", "RBC", "Platelet", "AN", "AM", "AE", "AB", "AL")))
+
+
+for(j in 1: length(num_val)){
+for(i in 1:5){
+# PC versus time
+
+ checkPC1 <- lm(scores[,i] ~ current_covar_num[,j])
+
+#Get the summary statistics from it
+  summary(checkPC1)
+
+#Get the p-value of the F-statistic
+  summary(checkPC1)$fstatistic
+
+  fstat <- as.data.frame(summary(checkPC1)$fstatistic)
+  p_fstat <- 1-pf(fstat[1,], fstat[2,], fstat[3,])
+  pvalues_day[i,j] <- p_fstat
+  
+#Fraction of the variance explained by the model
+  r_value <- summary(checkPC1)$r.squared
+  PC_pvalues_day[i,j] <- sqrt(summary(checkPC1)$r.squared)
+}
+}
+
+head(r_value)
+
+# PCs versus categorical 
+                   
+PC_pvalues_day = matrix(data = NA, nrow = 5, ncol = 11, dimnames = list(c("PC1", "PC2", "PC3", "PC4", "PC5"), c("Individual", "Time", "BE", "BE2", "BINGE", "PURGE", "BE_LOCAL", "BE_GROUP", "Psych_meds", "Hormone", "VitSupp")))
+
+pvalues_day = matrix(data = NA, nrow = 5, ncol = 11, dimnames = list(c("PC1", "PC2", "PC3", "PC4", "PC5"), c("Individual", "Time", "BE", "BE2", "BINGE", "PURGE", "BE_LOCAL", "BE_GROUP", "Psych_meds", "Hormone", "VitSupp")))
+
+
+for(j in 1: length(cat_val)){
+for(i in 1:5){
+# PC versus time
+
+ checkPC1 <- lm(scores[,i] ~ current_covar_cat[,j])
+
+#Get the summary statistics from it
+  summary(checkPC1)
+
+#Get the p-value of the F-statistic
+  summary(checkPC1)$fstatistic
+
+  fstat <- as.data.frame(summary(checkPC1)$fstatistic)
+  p_fstat <- 1-pf(fstat[1,], fstat[2,], fstat[3,])
+  pvalues_day[i,j] <- p_fstat
+  
+#Fraction of the variance explained by the model
+  r_value <- summary(checkPC1)$r.squared
+  PC_pvalues_day[i,j] <- sqrt(summary(checkPC1)$r.squared)
+}
+}
+
+head(r_value)
+```
+

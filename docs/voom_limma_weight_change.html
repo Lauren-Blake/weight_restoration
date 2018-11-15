@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Lauren Blake" />
+
+<meta name="date" content="2018-08-20" />
+
+<title>voom_limma_weight_change</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-5.0.13/css/fa-svg-with-js.css" rel="stylesheet" />
+<script src="site_libs/font-awesome-5.0.13/js/fontawesome-all.min.js"></script>
+<script src="site_libs/font-awesome-5.0.13/js/fa-v4-shims.min.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">weight_restoration</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/jdblischak/workflowr">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">voom_limma_weight_change</h1>
+<h4 class="author"><em>Lauren Blake</em></h4>
+<h4 class="date"><em>2018-08-20</em></h4>
+
+</div>
+
+
+<p><strong>Last updated:</strong> 2018-08-28</p>
+<strong>workflowr checks:</strong> <small>(Click a bullet for more information)</small>
+<ul>
+<li>
+<p><details> <summary> <strong style="color:red;">✖</strong> <strong>R Markdown file:</strong> uncommitted changes </summary> The R Markdown is untracked by Git. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Environment:</strong> empty </summary></p>
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Seed:</strong> <code>set.seed(12345)</code> </summary></p>
+<p>The command <code>set.seed(12345)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Session information:</strong> recorded </summary></p>
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</details>
+</li>
+<li>
+<p><details> <summary> <strong style="color:blue;">✔</strong> <strong>Repository version:</strong> 241c630 </summary></p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    analysis/.DS_Store
+    Ignored:    data/.DS_Store
+    Ignored:    data/aux_info/
+    Ignored:    data/hg_38/
+    Ignored:    data/libParams/
+    Ignored:    output/.DS_Store
+
+Untracked files:
+    Untracked:  _workflowr.yml
+    Untracked:  analysis/Collection_dates.Rmd
+    Untracked:  analysis/Converting_IDs.Rmd
+    Untracked:  analysis/Global_variation.Rmd
+    Untracked:  analysis/Preliminary_clinical_covariate.Rmd
+    Untracked:  analysis/VennDiagram2018-07-24_06-55-46.log
+    Untracked:  analysis/VennDiagram2018-07-24_06-56-13.log
+    Untracked:  analysis/VennDiagram2018-07-24_06-56-50.log
+    Untracked:  analysis/VennDiagram2018-07-24_06-58-41.log
+    Untracked:  analysis/VennDiagram2018-07-24_07-00-07.log
+    Untracked:  analysis/VennDiagram2018-07-24_07-00-42.log
+    Untracked:  analysis/VennDiagram2018-07-24_07-01-08.log
+    Untracked:  analysis/VennDiagram2018-08-17_15-13-24.log
+    Untracked:  analysis/VennDiagram2018-08-17_15-13-30.log
+    Untracked:  analysis/VennDiagram2018-08-17_15-15-06.log
+    Untracked:  analysis/VennDiagram2018-08-17_15-16-01.log
+    Untracked:  analysis/VennDiagram2018-08-17_15-17-51.log
+    Untracked:  analysis/VennDiagram2018-08-17_15-18-42.log
+    Untracked:  analysis/VennDiagram2018-08-17_15-19-21.log
+    Untracked:  analysis/VennDiagram2018-08-20_09-07-57.log
+    Untracked:  analysis/VennDiagram2018-08-20_09-08-37.log
+    Untracked:  analysis/VennDiagram2018-08-26_19-54-03.log
+    Untracked:  analysis/VennDiagram2018-08-26_20-47-08.log
+    Untracked:  analysis/VennDiagram2018-08-26_20-49-49.log
+    Untracked:  analysis/VennDiagram2018-08-27_00-04-36.log
+    Untracked:  analysis/VennDiagram2018-08-27_00-09-27.log
+    Untracked:  analysis/VennDiagram2018-08-27_00-13-57.log
+    Untracked:  analysis/VennDiagram2018-08-27_00-16-32.log
+    Untracked:  analysis/VennDiagram2018-08-27_10-00-25.log
+    Untracked:  analysis/VennDiagram2018-08-28_06-03-13.log
+    Untracked:  analysis/VennDiagram2018-08-28_06-03-14.log
+    Untracked:  analysis/VennDiagram2018-08-28_06-05-50.log
+    Untracked:  analysis/VennDiagram2018-08-28_06-06-58.log
+    Untracked:  analysis/VennDiagram2018-08-28_06-10-12.log
+    Untracked:  analysis/VennDiagram2018-08-28_06-10-13.log
+    Untracked:  analysis/VennDiagram2018-08-28_06-18-29.log
+    Untracked:  analysis/VennDiagram2018-08-28_07-22-26.log
+    Untracked:  analysis/VennDiagram2018-08-28_07-22-27.log
+    Untracked:  analysis/background_dds_david.csv
+    Untracked:  analysis/correlations_bet_covariates.Rmd
+    Untracked:  analysis/correlations_over_time.Rmd
+    Untracked:  analysis/genocode_annotation_info.Rmd
+    Untracked:  analysis/genotypes.Rmd
+    Untracked:  analysis/import_transcript_level_estimates.Rmd
+    Untracked:  analysis/test_dds_david.csv
+    Untracked:  analysis/variables_by_time.Rmd
+    Untracked:  analysis/voom_limma.Rmd
+    Untracked:  analysis/voom_limma_hg37.Rmd
+    Untracked:  analysis/voom_limma_weight_change.Rmd
+    Untracked:  data/BAN2 Dates_T1_T2.xlsx
+    Untracked:  data/BAN_DATES.csv
+    Untracked:  data/BAN_DATES.xlsx
+    Untracked:  data/BAN_DATES_txt.csv
+    Untracked:  data/Ban_geno.csv
+    Untracked:  data/Ban_geno.xlsx
+    Untracked:  data/Blood_dates.txt
+    Untracked:  data/DAVID_background.txt
+    Untracked:  data/DAVID_list_T1T2.txt
+    Untracked:  data/DAVID_list_T1T2_weight.txt
+    Untracked:  data/DAVID_list_T2T3.txt
+    Untracked:  data/DAVID_list_T2T3_weight.txt
+    Untracked:  data/DAVID_results/
+    Untracked:  data/DAVID_top100_list_T1T2.txt
+    Untracked:  data/DAVID_top100_list_T1T2_weight.txt
+    Untracked:  data/DAVID_top100_list_T2T3.txt
+    Untracked:  data/DAVID_top100_list_T2T3_weight.txt
+    Untracked:  data/Eigengenes/
+    Untracked:  data/FemaleWeightRestoration-01-dataInput.RData
+    Untracked:  data/FemaleWeightRestoration-resid-01-dataInput.RData
+    Untracked:  data/FemaleWeightRestoration-resid-T1T2-01-dataInput.RData
+    Untracked:  data/HTSF_IDs.sav
+    Untracked:  data/Homo_sapiens.GRCh38.v22_table.txt
+    Untracked:  data/Labels.csv
+    Untracked:  data/Labels.xlsx
+    Untracked:  data/RIN.xlsx
+    Untracked:  data/RIN_over_time.csv
+    Untracked:  data/RIN_over_time.xlsx
+    Untracked:  data/T0_consolid.csv
+    Untracked:  data/T0_consolid.xlsx
+    Untracked:  data/age_t1.txt
+    Untracked:  data/birthday_age.csv
+    Untracked:  data/birthday_age.xlsx
+    Untracked:  data/clinical_sample_info.csv
+    Untracked:  data/clinical_sample_info_geno.csv
+    Untracked:  data/cmd_info.json
+    Untracked:  data/counts_hg37_gc_txsalmon.RData
+    Untracked:  data/counts_hg38_gc.RData
+    Untracked:  data/counts_hg38_gc_dds.RData
+    Untracked:  data/counts_hg38_gc_txsalmon.RData
+    Untracked:  data/covar_lm.csv
+    Untracked:  data/covar_lm_missing.csv
+    Untracked:  data/eigengenes_T1_T2_cov_adj_exp_5_modules.txt
+    Untracked:  data/eigengenes_T1_T2_module_background.txt
+    Untracked:  data/eigengenes_adj_exp_7_modules.txt
+    Untracked:  data/eigengenes_cov_adj_exp_14_modules.txt
+    Untracked:  data/eigengenes_module_background.txt
+    Untracked:  data/eigengenes_unadj_exp_10_modules.txt
+    Untracked:  data/eigengenes_unadj_exp_6_modules.txt
+    Untracked:  data/eigengenes_unadj_exp_9_modules.txt
+    Untracked:  data/files_list.txt
+    Untracked:  data/final_covariates.csv
+    Untracked:  data/gene_exp_values_2202.txt
+    Untracked:  data/gene_exp_values_2209.txt
+    Untracked:  data/gene_exp_values_2218.txt
+    Untracked:  data/gene_exp_values_2220.txt
+    Untracked:  data/gene_exp_values_2226.txt
+    Untracked:  data/gene_exp_values_2228.txt
+    Untracked:  data/gene_expression_filtered_T1T5.csv
+    Untracked:  data/gene_names_58387.txt
+    Untracked:  data/gene_to_tran.txt
+    Untracked:  data/lm_covar_fixed_random.csv
+    Untracked:  data/lm_covar_fixed_random_geno.csv
+    Untracked:  data/logs/
+    Untracked:  data/module_T1T2_cov_adj_blue.txt
+    Untracked:  data/module_T1T2_cov_adj_brown.txt
+    Untracked:  data/module_T1T2_cov_adj_turquoise.txt
+    Untracked:  data/module_T1T2_cov_adj_yellow.txt
+    Untracked:  data/module_adj_cov_merged_blue.txt
+    Untracked:  data/module_adj_cov_merged_brown.txt
+    Untracked:  data/module_adj_cov_merged_cyan.txt
+    Untracked:  data/module_adj_cov_merged_green.txt
+    Untracked:  data/module_adj_cov_merged_greenyellow.txt
+    Untracked:  data/module_adj_cov_merged_magenta.txt
+    Untracked:  data/module_adj_cov_merged_red.txt
+    Untracked:  data/module_adj_cov_merged_salmon.txt
+    Untracked:  data/module_adj_cov_merged_tan.txt
+    Untracked:  data/module_adj_cov_merged_yellow.txt
+    Untracked:  data/module_black.txt
+    Untracked:  data/module_blue.txt
+    Untracked:  data/module_brown.txt
+    Untracked:  data/module_cov_adj_black.txt
+    Untracked:  data/module_cov_adj_blue.txt
+    Untracked:  data/module_cov_adj_brown.txt
+    Untracked:  data/module_cov_adj_cyan.txt
+    Untracked:  data/module_cov_adj_green.txt
+    Untracked:  data/module_cov_adj_greenyellow.txt
+    Untracked:  data/module_cov_adj_magenta.txt
+    Untracked:  data/module_cov_adj_pink.txt
+    Untracked:  data/module_cov_adj_purple.txt
+    Untracked:  data/module_cov_adj_red.txt
+    Untracked:  data/module_cov_adj_salmon.txt
+    Untracked:  data/module_cov_adj_tan.txt
+    Untracked:  data/module_cov_adj_turquoise.txt
+    Untracked:  data/module_cov_adj_yellow.txt
+    Untracked:  data/module_cyan.txt
+    Untracked:  data/module_green.txt
+    Untracked:  data/module_greenyellow.txt
+    Untracked:  data/module_magenta.txt
+    Untracked:  data/module_merged_black.txt
+    Untracked:  data/module_merged_blue.txt
+    Untracked:  data/module_merged_brown.txt
+    Untracked:  data/module_merged_cyan.txt
+    Untracked:  data/module_merged_green.txt
+    Untracked:  data/module_merged_greenyellow.txt
+    Untracked:  data/module_merged_magenta.txt
+    Untracked:  data/module_merged_pink.txt
+    Untracked:  data/module_merged_purple.txt
+    Untracked:  data/module_merged_red.txt
+    Untracked:  data/module_merged_salmon.txt
+    Untracked:  data/module_merged_tan.txt
+    Untracked:  data/module_merged_turquoise.txt
+    Untracked:  data/module_merged_yellow.txt
+    Untracked:  data/module_pink.txt
+    Untracked:  data/module_purple.txt
+    Untracked:  data/module_red.txt
+    Untracked:  data/module_salmon.txt
+    Untracked:  data/module_tan.txt
+    Untracked:  data/module_turquoise.txt
+    Untracked:  data/module_yellow.txt
+    Untracked:  data/notimecovariates.csv
+    Untracked:  data/only_individuals_biomarkers_weight_restoration_study.xlsx
+    Untracked:  data/pcs_genes.csv
+    Untracked:  data/pcs_genes.txt
+    Untracked:  data/rest1t2_BI_hg37.rds
+    Untracked:  data/rest1t2_BI_hg38.rds
+    Untracked:  data/rest1t2_hg37.rds
+    Untracked:  data/rest1t2_psych_meds_BMI_hg37.rds
+    Untracked:  data/rest1t2_psych_meds_hg37.rds
+    Untracked:  data/rest2t3_BI_hg37.rds
+    Untracked:  data/rest2t3_BI_hg38.rds
+    Untracked:  data/rest2t3_hg37.rds
+    Untracked:  data/rest2t3_psych_meds_BMI_hg37.rds
+    Untracked:  data/rest2t3_psych_meds_hg37.rds
+    Untracked:  data/salmon_gene_matrix_bak_reorder_time.txt
+    Untracked:  data/technical_sample_info.csv
+    Untracked:  data/tx_to_gene.txt
+    Untracked:  data/tx_to_gene_37.txt
+    Untracked:  data/usa2.pcawithref.menv.mds_cov
+    Untracked:  data/vsd_values_hg38_gc.rds
+    Untracked:  data/~$Labels.xlsx
+    Untracked:  data/~$T0_consolid.xlsx
+    Untracked:  docs/VennDiagram2018-07-24_06-55-46.log
+    Untracked:  docs/VennDiagram2018-07-24_06-56-13.log
+    Untracked:  docs/VennDiagram2018-07-24_06-56-50.log
+    Untracked:  docs/VennDiagram2018-07-24_06-58-41.log
+    Untracked:  docs/VennDiagram2018-07-24_07-00-07.log
+    Untracked:  docs/VennDiagram2018-07-24_07-00-42.log
+    Untracked:  docs/VennDiagram2018-07-24_07-01-08.log
+    Untracked:  docs/figure/
+
+Unstaged changes:
+    Modified:   analysis/_site.yml
+    Modified:   analysis/about.Rmd
+    Deleted:    analysis/chunks.R
+    Modified:   analysis/index.Rmd
+    Modified:   analysis/license.Rmd
+
+</code></pre>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes. </details>
+</li>
+</ul>
+<hr />
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<pre class="r"><code># Library
+
+library(edgeR)</code></pre>
+<pre><code>Loading required package: limma</code></pre>
+<pre class="r"><code>library(limma)
+library(VennDiagram)</code></pre>
+<pre><code>Warning: package &#39;VennDiagram&#39; was built under R version 3.4.4</code></pre>
+<pre><code>Loading required package: grid</code></pre>
+<pre><code>Loading required package: futile.logger</code></pre>
+<pre class="r"><code>library(cowplot)</code></pre>
+<pre><code>Warning: package &#39;cowplot&#39; was built under R version 3.4.4</code></pre>
+<pre><code>Loading required package: ggplot2</code></pre>
+<pre><code>Warning: package &#39;ggplot2&#39; was built under R version 3.4.4</code></pre>
+<pre><code>
+Attaching package: &#39;cowplot&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:ggplot2&#39;:
+
+    ggsave</code></pre>
+<pre class="r"><code># Read in the data
+
+tx.salmon &lt;- readRDS(&quot;../data/counts_hg38_gc_txsalmon.RData&quot;)
+salmon_counts&lt;- as.data.frame(tx.salmon$counts)
+
+
+#tx.salmon &lt;- readRDS(&quot;../data/counts_hg38_gc_dds.RData&quot;)
+#salmon_counts&lt;- as.data.frame(tx.salmon)
+
+
+# Subset to T1-T3
+
+salmon_counts &lt;- salmon_counts[,1:144]
+
+# Read in the clinical covariates
+
+clinical_sample_info &lt;- read.csv(&quot;../data/lm_covar_fixed_random.csv&quot;)
+dim(clinical_sample_info)</code></pre>
+<pre><code>[1] 156  13</code></pre>
+<pre class="r"><code># Subset to T1-T3
+
+clinical_sample &lt;- clinical_sample_info[1:144,(-12)]
+
+dim(clinical_sample)</code></pre>
+<pre><code>[1] 144  12</code></pre>
+</div>
+<div id="differential-expression-pipeline" class="section level2">
+<h2>Differential expression pipeline</h2>
+<pre class="r"><code># Filter lowly expressed reads
+
+cpm &lt;- cpm(salmon_counts, log=TRUE)
+
+expr_cutoff &lt;- 1.5
+hist(cpm, main = &quot;log2(CPM) values in unfiltered data&quot;, breaks = 100, xlab = &quot;log2(CPM) values&quot;)
+abline(v = expr_cutoff, col = &quot;red&quot;, lwd = 3)</code></pre>
+<p><img src="figure/voom_limma_weight_change.Rmd/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>hist(cpm, main = &quot;log2(CPM) values in unfiltered data&quot;, breaks = 100, xlab = &quot;log2(CPM) values&quot;, ylim = c(0, 100000))
+abline(v = expr_cutoff, col = &quot;red&quot;, lwd = 3)</code></pre>
+<p><img src="figure/voom_limma_weight_change.Rmd/unnamed-chunk-2-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># Basic filtering
+cpm_filtered &lt;- (rowSums(cpm &gt; 1.5) &gt; 72)
+
+genes_in_cutoff &lt;- cpm[cpm_filtered==TRUE,]
+
+hist(as.numeric(unlist(genes_in_cutoff)), main = &quot;log2(CPM) values in filtered data&quot;, breaks = 100, xlab = &quot;log2(CPM) values&quot;)</code></pre>
+<p><img src="figure/voom_limma_weight_change.Rmd/unnamed-chunk-2-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># Find the original counts of all of the genes that fit the criteria 
+
+counts_genes_in_cutoff &lt;- salmon_counts[cpm_filtered==TRUE,]
+dim(counts_genes_in_cutoff)</code></pre>
+<pre><code>[1] 11619   144</code></pre>
+<pre class="r"><code># Filter out hemoglobin
+
+counts_genes_in_cutoff &lt;-  counts_genes_in_cutoff[which( rownames(counts_genes_in_cutoff) != &quot;HBB&quot; ),]
+counts_genes_in_cutoff &lt;-  counts_genes_in_cutoff[which( rownames(counts_genes_in_cutoff) != &quot;HBA2&quot; ),]
+counts_genes_in_cutoff &lt;-  counts_genes_in_cutoff[which( rownames(counts_genes_in_cutoff) != &quot;HBA1&quot; ),]
+
+# Take the TMM of the counts only for the genes that remain after filtering
+
+dge_in_cutoff &lt;- DGEList(counts=as.matrix(counts_genes_in_cutoff), genes=rownames(counts_genes_in_cutoff), group = as.character(t(clinical_sample$Individual)))
+dge_in_cutoff &lt;- calcNormFactors(dge_in_cutoff)
+
+cpm_in_cutoff &lt;- cpm(dge_in_cutoff, normalized.lib.sizes=TRUE, log=TRUE)
+
+pca_genes &lt;- prcomp(t(cpm_in_cutoff), scale = T, retx = TRUE, center = TRUE)
+
+matrixpca &lt;- pca_genes$x
+PC1 &lt;- matrixpca[,1]
+PC2 &lt;- matrixpca[,2]
+pc3 &lt;- matrixpca[,3]
+pc4 &lt;- matrixpca[,4]
+pc5 &lt;- matrixpca[,5]
+
+pcs &lt;- data.frame(PC1, PC2, pc3, pc4, pc5)
+
+summary &lt;- summary(pca_genes)
+
+head(summary$importance[2,1:5])</code></pre>
+<pre><code>    PC1     PC2     PC3     PC4     PC5 
+0.25012 0.13000 0.08757 0.05524 0.03285 </code></pre>
+<pre class="r"><code>norm_count &lt;- ggplot(data=pcs, aes(x=PC1, y=PC2, color= as.factor(clinical_sample$Time))) + geom_point(aes(colour = as.factor(clinical_sample$Time))) + ggtitle(&quot;PCA of normalized counts&quot;) + scale_color_discrete(name = &quot;Time&quot;)
+
+plot_grid(norm_count)</code></pre>
+<p><img src="figure/voom_limma_weight_change.Rmd/unnamed-chunk-2-4.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>clinical_sample[,1] &lt;- as.factor(clinical_sample[,1])
+
+clinical_sample[,2] &lt;- as.factor(clinical_sample[,2])
+
+clinical_sample[,4] &lt;- as.factor(clinical_sample[,4])
+
+clinical_sample[,5] &lt;- as.factor(clinical_sample[,5])
+
+clinical_sample[,6] &lt;- as.factor(clinical_sample[,6])
+
+
+# Create the design matrix
+
+# Use the standard treatment-contrasts parametrization. See Ch. 9 of limma
+# User&#39;s Guide.
+
+design &lt;- model.matrix(~as.factor(Time) + Age + as.factor(Race) + as.factor(BE_GROUP) + as.factor(psychmeds) + RBC + AN + AE + AL  + RIN + Change_weight, data = clinical_sample)
+colnames(design) &lt;- c(&quot;Intercept&quot;, &quot;Time2&quot;, &quot;Time3&quot;, &quot;Race3&quot;, &quot;Race5&quot;, &quot;Age&quot;, &quot;BE&quot;, &quot;Psychmeds&quot;, &quot;RBC&quot;, &quot;AN&quot;, &quot;AE&quot;, &quot;AL&quot;, &quot;RIN&quot;, &quot;Change_weight&quot;)
+
+
+# Fit model 
+
+# Model individual as a random effect.
+# Recommended to run both voom and duplicateCorrelation twice.
+# https://support.bioconductor.org/p/59700/#67620
+
+cpm.voom &lt;- voom(dge_in_cutoff, design, normalize.method=&quot;none&quot;)
+#check_rel &lt;- duplicateCorrelation(cpm.voom, design, block = clinical_sample$Individual)
+check_rel_correlation &lt;-  0.1179835
+cpm.voom.corfit &lt;- voom(dge_in_cutoff, design, normalize.method=&quot;none&quot;, plot = TRUE, block = clinical_sample$Individual, correlation = check_rel_correlation)</code></pre>
+<p><img src="figure/voom_limma_weight_change.Rmd/unnamed-chunk-2-5.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#check_rel &lt;- duplicateCorrelation(cpm.voom.corfit, design, block = clinical_sample$Individual)
+check_rel_correlation &lt;- 0.1188083
+
+plotDensities(cpm.voom.corfit[,1])</code></pre>
+<p><img src="figure/voom_limma_weight_change.Rmd/unnamed-chunk-2-6.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plotDensities(cpm.voom.corfit[,2])</code></pre>
+<p><img src="figure/voom_limma_weight_change.Rmd/unnamed-chunk-2-7.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plotDensities(cpm.voom.corfit[,3])</code></pre>
+<p><img src="figure/voom_limma_weight_change.Rmd/unnamed-chunk-2-8.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>pca_genes &lt;- prcomp(t(cpm.voom.corfit$E), scale = T, retx = TRUE, center = TRUE)
+
+matrixpca &lt;- pca_genes$x
+PC1 &lt;- matrixpca[,1]
+PC2 &lt;- matrixpca[,2]
+pc3 &lt;- matrixpca[,3]
+pc4 &lt;- matrixpca[,4]
+pc5 &lt;- matrixpca[,5]
+
+pcs &lt;- data.frame(PC1, PC2, pc3, pc4, pc5)
+
+summary &lt;- summary(pca_genes)
+
+head(summary$importance[2,1:5])</code></pre>
+<pre><code>    PC1     PC2     PC3     PC4     PC5 
+0.25066 0.13028 0.08774 0.05501 0.03289 </code></pre>
+<pre class="r"><code>ggplot(data=pcs, aes(x=PC1, y=PC2, color=clinical_sample$Time)) + geom_point(aes(colour = as.factor(clinical_sample$Time))) + ggtitle(&quot;PCA of normalized counts&quot;) + scale_color_discrete(name = &quot;Time&quot;)</code></pre>
+<p><img src="figure/voom_limma_weight_change.Rmd/unnamed-chunk-2-9.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># Run lmFit and eBayes in limma
+
+fit &lt;- lmFit(cpm.voom.corfit, design, block=clinical_sample$Individual, correlation=check_rel_correlation)
+
+# In the contrast matrix, have the time points
+
+cm1 &lt;- makeContrasts(Time1v2 = Time2, Time2v3 = Time3 - Time2, levels = design)
+
+#cm1 &lt;- makeContrasts(Time1v2 = Time2, Time2v3 = Time3, levels = design)
+
+# Fit the new model
+diff_species &lt;- contrasts.fit(fit, cm1)
+fit1 &lt;- eBayes(diff_species)
+
+FDR_level &lt;- 0.05
+
+Time1v2 =topTable(fit1, coef=1, adjust=&quot;BH&quot;, number=Inf, sort.by=&quot;none&quot;)
+Time2v3 =topTable(fit1, coef=2, adjust=&quot;BH&quot;, number=Inf, sort.by=&quot;none&quot;)
+
+#plot(fit1$coefficients[,1], fit1$coefficients[,2])
+plot(Time1v2$logFC, Time2v3$logFC)</code></pre>
+<p><img src="figure/voom_limma_weight_change.Rmd/unnamed-chunk-2-10.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot(Time1v2$t, Time2v3$t)</code></pre>
+<p><img src="figure/voom_limma_weight_change.Rmd/unnamed-chunk-2-11.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot(Time1v2$adj.P.Val, Time2v3$adj.P.Val)</code></pre>
+<p><img src="figure/voom_limma_weight_change.Rmd/unnamed-chunk-2-12.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>dim(Time1v2[which(Time1v2$adj.P.Val &lt; FDR_level),])</code></pre>
+<pre><code>[1] 44  7</code></pre>
+<pre class="r"><code>dim(Time2v3[which(Time2v3$adj.P.Val &lt; FDR_level),])</code></pre>
+<pre><code>[1] 1991    7</code></pre>
+<pre class="r"><code>head(topTable(fit1, coef=1, adjust=&quot;BH&quot;, number=100, sort.by=&quot;T&quot;))</code></pre>
+<pre><code>          genes     logFC   AveExpr        t      P.Value  adj.P.Val
+ABALON   ABALON 1.2887511  2.170769 4.952850 2.150985e-06 0.01180735
+CTNNAL1 CTNNAL1 1.1912596  1.961155 4.930330 2.371899e-06 0.01180735
+DCAF6     DCAF6 0.5014972  5.448487 4.872156 3.049420e-06 0.01180735
+RNF10     RNF10 0.8199629  8.824150 4.724856 5.712588e-06 0.01374242
+GPR146   GPR146 1.1950100  4.684580 4.716587 5.915299e-06 0.01374242
+ALAS2     ALAS2 1.5503665 10.196972 4.636501 8.275050e-06 0.01602050
+               B
+ABALON  3.830754
+CTNNAL1 3.499233
+DCAF6   4.297388
+RNF10   3.704913
+GPR146  3.664174
+ALAS2   3.323802</code></pre>
+<pre class="r"><code>head(topTable(fit1, coef=2, adjust=&quot;BH&quot;, number=100, sort.by=&quot;T&quot;))</code></pre>
+<pre><code>                    genes     logFC  AveExpr        t      P.Value
+MPHOSPH8         MPHOSPH8 0.7313353 6.149241 9.694977 3.460385e-17
+CYP20A1           CYP20A1 0.6466663 4.471779 9.464323 1.306430e-16
+DFFA                 DFFA 0.5483855 4.550302 8.948600 2.491086e-15
+RTF1                 RTF1 0.5960518 5.568985 8.607535 1.714095e-14
+RP11-83A24.2 RP11-83A24.2 1.0179575 2.905414 7.815085 1.392854e-12
+CTA-292E10.9 CTA-292E10.9 0.8056242 3.931612 7.747620 2.012435e-12
+                adj.P.Val        B
+MPHOSPH8     4.019583e-13 28.39307
+CYP20A1      7.587744e-13 26.98074
+DFFA         9.645486e-12 24.18296
+RTF1         4.977732e-11 22.41650
+RP11-83A24.2 3.235878e-09 17.81809
+CTA-292E10.9 3.896074e-09 17.73477</code></pre>
+</div>
+<div id="make-a-venn-diagram-of-the-de-genes" class="section level2">
+<h2>Make a Venn Diagram of the DE genes</h2>
+<pre class="r"><code># FDR 1%
+FDR_level &lt;- 0.01
+
+Time12 &lt;- rownames(Time1v2[which(Time1v2$adj.P.Val &lt; FDR_level),])
+
+Time23 &lt;- rownames(Time2v3[which(Time2v3$adj.P.Val &lt; FDR_level),])
+
+mylist &lt;- list()
+mylist[[&quot;DE T1 to T2&quot;]] &lt;- Time12
+mylist[[&quot;DE T2 to T3&quot;]] &lt;- Time23
+
+# Make as pdf 
+Four_comp &lt;- venn.diagram(mylist, filename= NULL, main=&quot;DE genes between timepoints (1% FDR)&quot;, cex=1.5 , fill = NULL, lty=1, height=2000, width=2000, rotation.degree = 180, scaled = FALSE, cat.pos = c(0,0))
+
+grid.draw(Four_comp)</code></pre>
+<p><img src="figure/voom_limma_weight_change.Rmd/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>dev.off()</code></pre>
+<pre><code>null device 
+          1 </code></pre>
+<pre class="r"><code>#pdf(file = &quot;~/Dropbox/Figures/DET1_T2_change_weight_FDR1.pdf&quot;)
+#  grid.draw(Four_comp)
+#dev.off()</code></pre>
+<pre class="r"><code># FDR 5%
+
+FDR_level &lt;- 0.05
+Time12 &lt;- rownames(Time1v2[which(Time1v2$adj.P.Val &lt; FDR_level),])
+
+Time23 &lt;- rownames(Time2v3[which(Time2v3$adj.P.Val &lt; FDR_level),])
+
+mylist &lt;- list()
+mylist[[&quot;DE T1 to T2&quot;]] &lt;- Time12
+mylist[[&quot;DE T2 to T3&quot;]] &lt;- Time23
+
+# Make as pdf 
+Four_comp &lt;- venn.diagram(mylist, filename= NULL, main=&quot;DE genes between timepoints (5% FDR)&quot;, cex=1.5 , fill = NULL, lty=1, height=2000, width=2000, rotation.degree = 180, scaled = FALSE, cat.pos = c(0,0))
+
+grid.draw(Four_comp)</code></pre>
+<p><img src="figure/voom_limma_weight_change.Rmd/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>dev.off()</code></pre>
+<pre><code>null device 
+          1 </code></pre>
+<pre class="r"><code>pdf(file = &quot;~/Dropbox/Figures/DET1_T2_change_weight_FDR5.pdf&quot;)
+  grid.draw(Four_comp)
+dev.off()</code></pre>
+<pre><code>null device 
+          1 </code></pre>
+</div>
+<div id="using-david" class="section level1">
+<h1>Using DAVID</h1>
+<p>Step 1: Use awk command to go from annotation file to ENSG and gene name only</p>
+<p>cat gencode.v22.annotation.gtf | awk ‘BEGIN{FS=“”}{split($9,a,“;”); if($3~“gene”) print a[1]“”a[3]“”$1“:”$4“-”$5“”$7}’ | sed ‘s/gene_id “//’ | sed ’s/gene_id”//’ | sed ‘s/gene_biotype “//’| sed ’s/gene_name”//’ | sed ’s/“//g’ &gt; Homo_sapiens.GRCh38.v22_table.txt</p>
+<p>Step 2: Get ENSEMBL Gene IDs for background</p>
+<pre class="r"><code># Set FDR level
+
+FDR_level &lt;- 0.01
+
+# Get gene names after filtering
+genes=as.data.frame(rownames(counts_genes_in_cutoff))
+colnames(genes) &lt;- c(&quot;Gene_name&quot;)
+
+
+# Gene to ID conversion document
+
+gene_id &lt;- read.table(&quot;../data/Homo_sapiens.GRCh38.v22_table.txt&quot;, stringsAsFactors = FALSE)
+colnames(gene_id) &lt;- c(&quot;ENSEMBL&quot;, &quot;Gene_name&quot;)
+
+# Eliminate the feature after the period (for DAVID)
+check &lt;- gsub(&quot;\\..*&quot;,&quot;&quot;,gene_id$ENSEMBL)
+
+new_gene_id &lt;- cbind(check, gene_id$Gene_name)
+gene_id &lt;- new_gene_id
+colnames(gene_id) &lt;- c(&quot;ENSEMBL&quot;, &quot;Gene_name&quot;)
+
+# Get gene names of the background
+comb_background &lt;- merge(genes, gene_id, by = c(&quot;Gene_name&quot;))
+summary(duplicated(comb_background$Gene_name))</code></pre>
+<pre><code>   Mode   FALSE    TRUE 
+logical   11616     387 </code></pre>
+<pre class="r"><code>comb_background1 &lt;- comb_background[!duplicated(comb_background$Gene_name),]
+
+dim(comb_background1)</code></pre>
+<pre><code>[1] 11616     2</code></pre>
+<pre class="r"><code>#write.table(comb_background1$ENSEMBL, &quot;../data/DAVID_background.txt&quot;, quote = F, row.names = F, col.names = F)</code></pre>
+<p>Step 3: Get ENSEMBL Gene IDs for T1 to T2 list</p>
+<pre class="r"><code># Get gene names after filtering
+genes=as.data.frame(rownames(Time1v2[which(Time1v2$adj.P.Val &lt; FDR_level),]))
+
+colnames(genes) &lt;- c(&quot;Gene_name&quot;)
+
+# Get gene names of the list
+comb_list &lt;- merge(genes, gene_id, by = c(&quot;Gene_name&quot;))
+summary(duplicated(comb_list$Gene_name))</code></pre>
+<pre><code>   Mode 
+logical </code></pre>
+<pre class="r"><code>comb_list &lt;- comb_list[!duplicated(comb_list$Gene_name),]
+
+dim(comb_list)</code></pre>
+<pre><code>[1] 0 2</code></pre>
+<pre class="r"><code>write.table(comb_list$ENSEMBL, &quot;../data/DAVID_list_T1T2_weight.txt&quot;, quote = F, row.names = F, col.names = F)
+
+# Kim et al used the top 100 genes
+
+genes=as.data.frame(rownames(topTable(fit1, coef=1, adjust=&quot;BH&quot;, number=100, sort.by=&quot;T&quot;)))
+
+colnames(genes) &lt;- c(&quot;Gene_name&quot;)
+
+# Get gene names of the list
+comb_list &lt;- merge(genes, gene_id, by = c(&quot;Gene_name&quot;))
+summary(duplicated(comb_list$Gene_name))</code></pre>
+<pre><code>   Mode   FALSE 
+logical     100 </code></pre>
+<pre class="r"><code>comb_list &lt;- comb_list[!duplicated(comb_list$Gene_name),]
+
+dim(comb_list)</code></pre>
+<pre><code>[1] 100   2</code></pre>
+<pre class="r"><code>write.table(comb_list$ENSEMBL, &quot;../data/DAVID_top100_list_T1T2_weight.txt&quot;, quote = F, row.names = F, col.names = F)</code></pre>
+<p>Step 4: Get ENSEMBL Gene IDs for T2 to T3 list</p>
+<pre class="r"><code># Get gene names after filtering
+genes=as.data.frame(rownames(Time2v3[which(Time2v3$adj.P.Val &lt; FDR_level),]))
+
+colnames(genes) &lt;- c(&quot;Gene_name&quot;)
+
+# Get gene names of the list
+comb_list &lt;- merge(genes, gene_id, by = c(&quot;Gene_name&quot;))
+summary(duplicated(comb_list$Gene_name))</code></pre>
+<pre><code>   Mode   FALSE    TRUE 
+logical     842       6 </code></pre>
+<pre class="r"><code>comb_list &lt;- comb_list[!duplicated(comb_list$Gene_name),]
+
+dim(comb_list)</code></pre>
+<pre><code>[1] 842   2</code></pre>
+<pre class="r"><code>write.table(comb_list$ENSEMBL, &quot;../data/DAVID_list_T2T3_weight.txt&quot;, quote = F, row.names = F, col.names = F)
+
+# Kim et al used the top 100 genes
+
+genes=as.data.frame(rownames(topTable(fit1, coef=2, adjust=&quot;BH&quot;, number=100, sort.by=&quot;T&quot;)))
+
+colnames(genes) &lt;- c(&quot;Gene_name&quot;)
+
+# Get gene names of the list
+comb_list &lt;- merge(genes, gene_id, by = c(&quot;Gene_name&quot;))
+summary(duplicated(comb_list$Gene_name))</code></pre>
+<pre><code>   Mode   FALSE    TRUE 
+logical     100       1 </code></pre>
+<pre class="r"><code>comb_list &lt;- comb_list[!duplicated(comb_list$Gene_name),]
+
+dim(comb_list)</code></pre>
+<pre><code>[1] 100   2</code></pre>
+<pre class="r"><code>write.table(comb_list$ENSEMBL, &quot;../data/DAVID_top100_list_T2T3_weight.txt&quot;, quote = F, row.names = F, col.names = F)</code></pre>
+<p>Step 5: Upload or copy and paste the gene lists to DAVID at <a href="https://david.ncifcrf.gov/conversion.jsp" class="uri">https://david.ncifcrf.gov/conversion.jsp</a>. Note, larger gene lists are more likely to need to be copied and pasted in the “Upload” tab, rather than uploaded.</p>
+<div id="session-information" class="section level2">
+<h2>Session information</h2>
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 3.4.3 (2017-11-30)
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+Running under: OS X El Capitan 10.11.6
+
+Matrix products: default
+BLAS: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] grid      stats     graphics  grDevices utils     datasets  methods  
+[8] base     
+
+other attached packages:
+[1] cowplot_0.9.3       ggplot2_3.0.0       VennDiagram_1.6.20 
+[4] futile.logger_1.4.3 edgeR_3.20.9        limma_3.34.9       
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_0.12.18         bindr_0.1.1          compiler_3.4.3      
+ [4] pillar_1.3.0         formatR_1.5          git2r_0.23.0        
+ [7] plyr_1.8.4           workflowr_1.1.1      R.methodsS3_1.7.1   
+[10] futile.options_1.0.1 R.utils_2.6.0        tools_3.4.3         
+[13] digest_0.6.16        evaluate_0.11        tibble_1.4.2        
+[16] gtable_0.2.0         lattice_0.20-35      pkgconfig_2.0.2     
+[19] rlang_0.2.2          yaml_2.2.0           bindrcpp_0.2.2      
+[22] withr_2.1.2          stringr_1.3.1        dplyr_0.7.6         
+[25] knitr_1.20           tidyselect_0.2.4     locfit_1.5-9.1      
+[28] rprojroot_1.3-2      glue_1.3.0           R6_2.2.2            
+[31] rmarkdown_1.10       purrr_0.2.5          lambda.r_1.2.3      
+[34] magrittr_1.5         whisker_0.3-2        backports_1.1.2     
+[37] scales_1.0.0         htmltools_0.3.6      assertthat_0.2.0    
+[40] colorspace_1.3-2     labeling_0.3         stringi_1.2.4       
+[43] lazyeval_0.2.1       munsell_0.5.0        crayon_1.3.4        
+[46] R.oo_1.22.0         </code></pre>
+</div>
+</div>
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+<hr>
+<p>
+    
+</p>
+<hr>
+
+<!-- To enable disqus, uncomment the section below and provide your disqus_shortname -->
+
+<!-- disqus
+  <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'rmarkdown'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+-->
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+<hr>
+<p>
+  This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a>
+  analysis was created with
+  <a href="https://github.com/jdblischak/workflowr">workflowr</a> 1.1.1
+</p>
+<hr>
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

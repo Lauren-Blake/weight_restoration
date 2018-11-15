@@ -1,0 +1,191 @@
+---
+title: "PCA_vst"
+author: "Lauren Blake"
+date: "July 23, 2018"
+output: workflowr::wflow_html
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+The goal of this script is to identify the major drivers of gene expression level variation in the data. 
+
+```{r load data}
+library(DESeq2)
+library("pheatmap")
+library("gplots")
+library("RColorBrewer")
+library("ggplot2")
+library("cowplot")
+
+# Read in the filtered data (file made from the end of voom_limma.Rmd)
+
+init_pc <- read.csv("../data/gene_expression_filtered_T1T5.csv")
+
+dim(init_pc)
+
+init_pc <- init_pc[,2:157]
+
+labels <- read.csv("../data/lm_covar_fixed_random.csv")
+labels_123 <- as.data.frame(paste(labels$Individual, labels$Time, sep = "_"))
+colnames(labels_123) <- c("ID_time")
+```
+
+# PCA on all data (vst transformed from DESEq2)
+
+```{r}
+vst <- readRDS("../data/vsd_values_hg38_gc.rds")
+
+# Run PCA on the normalized data
+
+pca_genes <- prcomp(t(vst), scale = FALSE, center = TRUE)
+
+matrixpca <- pca_genes$x
+PC1 <- matrixpca[,1]
+PC2 <- matrixpca[,2]
+pc3 <- matrixpca[,3]
+pc4 <- matrixpca[,4]
+pc5 <- matrixpca[,5]
+
+matrixpca <- as.data.frame(matrixpca)
+
+summary <- summary(pca_genes)
+
+head(summary$importance[2,1:5])
+
+norm_count <- ggplot(data=matrixpca, aes(x=PC1, y=PC2, color=as.factor(labels$Time))) + geom_point(aes(colour = as.factor(labels$Time))) + ggtitle("PCA of normalized counts") + scale_color_discrete(name = "Time")
+
+plot_grid(norm_count)
+
+```
+
+
+# PCA on filtered data
+
+```{r}
+# Load gene expression data from all 156 samples
+
+normalized_data <- read.csv("../data/gene_expression_filtered_T1T5.csv")
+
+# Run PCA on the normalized data
+
+pca_genes <- prcomp(t(normalized_data[,2:157]), scale = TRUE, center = TRUE)
+
+matrixpca <- pca_genes$x
+PC1 <- matrixpca[,1]
+PC2 <- matrixpca[,2]
+pc3 <- matrixpca[,3]
+pc4 <- matrixpca[,4]
+pc5 <- matrixpca[,5]
+
+matrixpca <- as.data.frame(matrixpca)
+
+summary <- summary(pca_genes)
+
+head(summary$importance[2,1:5])
+
+norm_count <- ggplot(data=matrixpca, aes(x=PC1, y=PC2, color=as.factor(labels$Time))) + geom_point(aes(colour = as.factor(labels$Time))) + ggtitle("PCA of normalized counts") + scale_color_discrete(name = "Time")
+
+plot_grid(norm_count)
+```
+
+# PCA on scaled data
+
+```{r run initial pca}
+# Add Bioinformatics step of scaling each gene
+
+# centering with 'scale()'
+center_scale <- function(x) {
+    scale(x, scale = TRUE)
+}
+
+# apply it
+centered_init_pc <- center_scale(init_pc)
+
+
+check <- cor(init_pc)
+cx <- sweep(check, 2, colMeans(check), "-")
+
+pca_genes <- prcomp(check, center = TRUE, scale = FALSE)
+
+matrixpca <- pca_genes$x
+PC1 <- matrixpca[,1]
+PC2 <- matrixpca[,2]
+pc3 <- matrixpca[,3]
+pc4 <- matrixpca[,4]
+pc5 <- matrixpca[,5]
+
+matrixpca <- as.data.frame(matrixpca)
+
+summary <- summary(pca_genes)
+
+head(summary$importance[2,1:5])
+
+norm_count <- ggplot(data=matrixpca, aes(x=PC1, y=PC2, color=as.factor(labels$Time))) + geom_point(aes(colour = as.factor(labels$Time))) + ggtitle("PCA of normalized counts") + scale_color_discrete(name = "Time")
+
+plot_grid(norm_count)
+
+```
+
+# PCA on normalized, filtered data- use loadings only
+
+```{r}
+pca_genes <- prcomp(init_pc, center = TRUE, scale = FALSE)
+
+pca_rot <- as.data.frame(pca_genes$rotation)
+pca_rot[,1] <- as.numeric(pca_rot[,1])
+pca_rot[,2] <- as.numeric(pca_rot[,2])
+
+
+norm_count <- ggplot(data=pca_rot, aes(x=PC1, y=PC2, color=as.factor(labels$Time))) + geom_point(aes(colour = as.factor(labels$Time))) + ggtitle("PCA of normalized counts") + scale_color_discrete(name = "Time")
+
+plot_grid(norm_count)
+
+```
+
+
+# SVD on filtered data
+
+```{r pca svd}
+# Run PCA
+
+X = t(scale(t(init_pc),center=TRUE,scale=FALSE))
+sv = svd(t(X))
+U = sv$u
+V = sv$v
+D = sv$d
+## in R calculate the rank of a matrix is by
+#qr(t(X))$rank
+
+plot(U[,1],U[,2],xlab="PC1",ylab="PC2")
+
+U <- as.data.frame(U)
+norm_count <- ggplot(data=U, aes(x=U[,1], y=U[,2], color=labels$Time)) + geom_point(aes(colour = as.factor(labels$Time))) + ggtitle("PCA of normalized counts") + scale_color_discrete(name = "Time") + xlab("PC1") + ylab("PC2")
+
+plot_grid(norm_count)
+
+#save_plot("/Users/laurenblake/Dropbox/Lauren Blake/Figures/PCA_time_August10.png", norm_count,
+#          base_aspect_ratio = 1)
+
+
+
+# Variance explained 
+
+varex = 0
+cumvar = 0
+denom = sum(D^2)
+for(i in 1:64){
+  varex[i] = D[i]^2/denom
+  cumvar[i] = sum(D[1:i]^2)/denom
+}
+
+## variance explained by each PC cumulatively
+varex
+cumvar
+```
+
